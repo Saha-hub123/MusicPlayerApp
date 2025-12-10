@@ -10,13 +10,13 @@
 
   <ItemGroup>
     <Folder Include="Views\" />
-    <Folder Include="Controllers\" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="ManagedBass" Version="4.0.2" />
     <PackageReference Include="ManagedBass.Aac" Version="4.0.2" />
     <PackageReference Include="ManagedBass.Flac" Version="4.0.2" />
+    <PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
   </ItemGroup>
 
 </Project>
