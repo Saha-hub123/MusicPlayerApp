@@ -1,0 +1,268 @@
+﻿<Window x:Class="MusicPlayerApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Music Player"
+        Height="750" Width="1200"
+        Background="#1F2945"
+        WindowStartupLocation="CenterScreen">
+
+    <!-- ========= RESOURCES (STYLE) ========= -->
+    <Window.Resources>
+
+        <!-- Style tombol di sidebar -->
+        <Style x:Key="SidebarButtonStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="Padding" Value="4"/>
+            <Setter Property="Margin" Value="0 3"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center"
+                                              Margin="10 0 0 0"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#2A3550"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Style item list lagu -->
+        <Style x:Key="MusicListItemStyle" TargetType="ListViewItem">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Margin" Value="0 4"/>
+            <Setter Property="Background" Value="#2A3550"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#36405F"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+    </Window.Resources>
+
+    <!-- ========= LAYOUT UTAMA ========= -->
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="260"/>
+            <!-- Sidebar -->
+            <ColumnDefinition/>
+            <!-- Konten utama -->
+        </Grid.ColumnDefinitions>
+
+        <!-- ========== SIDEBAR ========== -->
+        <Border Grid.Column="0" Background="#1B2338">
+            <StackPanel Margin="20">
+                <!-- Judul / Nama user -->
+                <TextBlock Text="Rihanna"
+                           FontSize="22"
+                           Foreground="White"
+                           FontWeight="Bold"
+                           Margin="0 10"/>
+
+                <!-- BROWSE -->
+                <TextBlock Text="Browse"
+                           Foreground="#6F7A95"
+                           FontSize="12"
+                           Margin="0 20 0 5"/>
+
+                <Button Content="Discover"   Style="{StaticResource SidebarButtonStyle}" />
+                <Button Content="Songs"      Style="{StaticResource SidebarButtonStyle}" />
+                <Button Content="Top charts" Style="{StaticResource SidebarButtonStyle}" />
+                <Button Content="Artist"     Style="{StaticResource SidebarButtonStyle}" />
+
+                <!-- PLAYLIST -->
+                <TextBlock Text="Playlist"
+                           Foreground="#6F7A95"
+                           FontSize="12"
+                           Margin="0 25 0 5"/>
+
+                <Button Content="Favourite" Style="{StaticResource SidebarButtonStyle}" />
+                <Button Content="Recent"    Style="{StaticResource SidebarButtonStyle}" />
+
+                <!-- MY MUSIC -->
+                <TextBlock Text="My music"
+                           Foreground="#6F7A95"
+                           FontSize="12"
+                           Margin="0 25 0 5"/>
+
+                <Button Content="High is hope"  Style="{StaticResource SidebarButtonStyle}" />
+                <Button Content="Shape of you"  Style="{StaticResource SidebarButtonStyle}" />
+                <Button Content="All we know"   Style="{StaticResource SidebarButtonStyle}" />
+            </StackPanel>
+        </Border>
+
+        <!-- ========== KONTEN UTAMA ========== -->
+        <Grid Grid.Column="1" Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <!-- Header -->
+                <RowDefinition Height="220"/>
+                <!-- New releases -->
+                <RowDefinition Height="Auto"/>
+                <!-- Title "New played" -->
+                <RowDefinition/>
+                <!-- List lagu -->
+                <RowDefinition Height="70"/>
+                <!-- Bottom player -->
+            </Grid.RowDefinitions>
+
+            <!-- HEADER -->
+            <StackPanel Grid.Row="0" Margin="0 0 0 20">
+                <TextBlock Text="This Weekend"
+                           FontSize="36"
+                           Foreground="White"
+                           FontWeight="Bold"/>
+
+                <TextBlock Text="As I was walkin' down the road to Bethlehem one night I looked up to the sky and there..."
+                           Foreground="#AEB7D3"
+                           FontSize="14"
+                           Width="500"
+                           TextWrapping="Wrap"
+                           Margin="0 5"/>
+            </StackPanel>
+
+            <!-- NEW RELEASES + FOTO ARTIS -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="320"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- New Releases -->
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="New Releases"
+                               FontSize="20"
+                               Foreground="White"
+                               Margin="0 0 0 10"/>
+
+                    <StackPanel Orientation="Horizontal">
+                        <!-- Kartu dummy -->
+                        <Border Width="120" Height="150" Margin="0 0 10 0"
+                                Background="#2A3550" CornerRadius="15">
+                            <StackPanel VerticalAlignment="Bottom" Margin="10" >
+                                <TextBlock Text="Rihanna" Foreground="White" FontWeight="Bold"/>
+                                <TextBlock Text="Singer"  Foreground="#AEB7D3" FontSize="12"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Width="120" Height="150" Margin="0 0 10 0"
+                                Background="#2A3550" CornerRadius="15"/>
+
+                        <Border Width="120" Height="150"
+                                Background="#2A3550" CornerRadius="15"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Foto artis besar (dummy) -->
+                <Border Grid.Column="1"
+                        Background="#2A3550"
+                        CornerRadius="25"
+                        Margin="20 0 0 0">
+                    <TextBlock Text="Artist Image"
+                               Foreground="#AEB7D3"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
+                </Border>
+            </Grid>
+
+            <!-- Title New Played -->
+            <TextBlock Grid.Row="2"
+                       Text="New played"
+                       FontSize="20"
+                       Foreground="White"
+                       Margin="0 20 0 10"/>
+
+            <!-- List Lagu -->
+            <ListView Grid.Row="3"
+                      x:Name="NewPlayedList"
+                      Background="Transparent"
+                      BorderThickness="0"
+                      ItemContainerStyle="{StaticResource MusicListItemStyle}">
+                <!-- Dummy items biar kelihatan di desain -->
+                <ListViewItem>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="40"/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="60"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="▶" Grid.Column="0" VerticalAlignment="Center"/>
+                        <TextBlock Text="High is hope" Grid.Column="1"/>
+                        <TextBlock Text="Rhaima" Grid.Column="2"/>
+                        <TextBlock Text="5:32" Grid.Column="3" HorizontalAlignment="Right"/>
+                    </Grid>
+                </ListViewItem>
+
+                <ListViewItem>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="40"/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="60"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="▶" Grid.Column="0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Shape of you" Grid.Column="1"/>
+                        <TextBlock Text="Ed Sherpan" Grid.Column="2"/>
+                        <TextBlock Text="3:45" Grid.Column="3" HorizontalAlignment="Right"/>
+                    </Grid>
+                </ListViewItem>
+            </ListView>
+
+            <!-- BOTTOM MINI PLAYER -->
+            <Grid Grid.Row="4" Background="#151C30">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="260"/>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="200"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Info lagu -->
+                <StackPanel Orientation="Horizontal" Margin="20 0" VerticalAlignment="Center">
+                    <Ellipse Width="40" Height="40" Fill="#2A3550"/>
+                    <StackPanel Margin="10 0">
+                        <TextBlock Text="All we know" Foreground="White"/>
+                        <TextBlock Text="Rhaima" Foreground="#AEB7D3" FontSize="11"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Slider progress -->
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <Slider Minimum="0" Maximum="100" Value="30"
+                            Margin="0 0 0 4"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch">
+                        <TextBlock Text="2:26" Foreground="#AEB7D3" FontSize="11"/>
+                        <TextBlock Text="7:26" Foreground="#AEB7D3" FontSize="11"
+                                   HorizontalAlignment="Right" Margin="0 0 10 0"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Tombol kontrol (dummy) -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal"
+                            HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Button Content="⏮" Width="30" Height="30" Margin="4"/>
+                    <Button Content="⏯" Width="30" Height="30" Margin="4"/>
+                    <Button Content="⏭" Width="30" Height="30" Margin="4"/>
+                </StackPanel>
+            </Grid>
+
+        </Grid>
+    </Grid>
+</Window>
