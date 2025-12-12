@@ -11,6 +11,8 @@ namespace MusicPlayerApp.Controllers
     public class MusicController
     {
         private readonly DatabaseService _db;
+        // Menggunakan service BASS kamu
+        private AudioPlayerService _player = new AudioPlayerService();
         private readonly AudioPlayerService _player;
         private readonly FileScannerService _scanner = new FileScannerService();
 
@@ -50,43 +52,51 @@ namespace MusicPlayerApp.Controllers
             _db.Reset();
         }
 
-        // =====================================================
-        // INITIAL SCAN
-        // =====================================================
-        public void ScanInitialFolder(string folder)
-        {
-            if (!Directory.Exists(folder)) return;
-
-            foreach (var file in Directory.GetFiles(folder, "*.*", SearchOption.AllDirectories))
-            {
-                if (!_scanner.IsAudioFile(file)) continue;
-
-                var song = _scanner.ReadMetadata(file);
-                _db.InsertSong(song);
-            }
-        }
-
-        // =====================================================
-        // FILE ADDED
-        // =====================================================
-        public void OnFileAdded(string path)
+        // Method PlaySong (Memutar lagu baru dari awal)
+        // 1. Play dari awal (Ganti Lagu)
+        public void PlaySong(Song song)
         {
             try
             {
-                if (!ShouldProcess(path)) return;
-                if (!_scanner.IsAudioFile(path)) return;
-                if (!File.Exists(path)) return;
-
-                Thread.Sleep(100);
-
-                if (_db.GetByPath(path) != null) return;
-
-                var song = _scanner.ReadMetadata(path);
-                _db.InsertSong(song);
-
-                RefreshUI();
+                // Panggil method Play milik AudioPlayerService yang butuh string
+                _player.Play(song.FilePath);
+                IsPlaying = true;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Error Play: " + ex.Message);
+            }
+        }
+
+        // 2. Pause Lagu
+        public void Pause()
+        {
+            if (IsPlaying)
+            {
+                _player.Pause(); // Panggil method Pause di AudioPlayerService
+                IsPlaying = false;
+            }
+        }
+
+        // 3. Resume (Lanjut Main) -- BAGIAN INI YANG DIPERBAIKI
+        public void Resume()
+        {
+            if (!IsPlaying)
+            {
+                // JANGAN panggil _player.Play(); karena itu butuh parameter string
+
+                // TAPI panggil method Resume() yang sudah kamu buat di service
+                _player.Resume();
+
+                IsPlaying = true;
+            }
+        }
+
+        // 4. Stop Total
+        public void StopSong()
+        {
+            _player.Stop();
+            IsPlaying = false;
         }
 
         // =====================================================

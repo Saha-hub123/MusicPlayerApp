@@ -51,6 +51,103 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+        <!--slider-->
+        <Style x:Key="ModernSliderThumbStyle" TargetType="{x:Type Thumb}">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Thumb}">
+                        <Ellipse Width="12" Height="12" Fill="White" StrokeThickness="0"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ModernSliderStyle" TargetType="{x:Type Slider}">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Slider}">
+                        <Grid VerticalAlignment="Center">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <Border x:Name="TrackBackground"
+                                Height="4" 
+                                CornerRadius="2" 
+                                Background="#3E4C6E" 
+                                VerticalAlignment="Center"/>
+
+                            <Track x:Name="PART_Track">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.DecreaseLarge}">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="{x:Type RepeatButton}">
+                                                <Border Height="4" CornerRadius="2" Background="#5CD1FF" />
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.DecreaseRepeatButton>
+
+                                <Track.Thumb>
+                                    <Thumb Style="{StaticResource ModernSliderThumbStyle}" 
+                                       VerticalAlignment="Center"/>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!--button action-->
+        <Style x:Key="IconButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Opacity" Value="0.7"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PlayButtonStyle" TargetType="{x:Type Button}">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Grid>
+                            <Ellipse Fill="{TemplateBinding Background}" Width="50" Height="50">
+                                <Ellipse.Effect>
+                                    <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.3" Color="Black"/>
+                                </Ellipse.Effect>
+                            </Ellipse>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#E0E0E0"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
     </Window.Resources>
 
@@ -246,68 +343,99 @@
 
             <!-- BOTTOM MINI PLAYER -->
             <Grid Grid.Row="4" Background="#151C30">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="260"/>
-                    <ColumnDefinition/>
-                    <ColumnDefinition Width="200"/>
+                    <ColumnDefinition Width="250"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="250"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Info lagu -->
-                <StackPanel Orientation="Horizontal" Margin="20 0" VerticalAlignment="Center">
-                    <Ellipse x:Name="AlbumArtContainer" Width="40" Height="40">
+                <Slider x:Name="ProgressSlider"
+            Grid.Row="0" Grid.ColumnSpan="3"
+            Style="{StaticResource ModernSliderStyle}" 
+            Minimum="0" Maximum="100" Value="0"
+            Cursor="Hand"
+            IsMoveToPointEnabled="True"
+            VerticalAlignment="Top"
+            Margin="-5 -5 -5 0" 
+            Height="16"
+            PreviewMouseLeftButtonDown="ProgressSlider_PreviewMouseDown"
+            PreviewMouseLeftButtonUp="ProgressSlider_PreviewMouseUp"
+            MouseMove="ProgressSlider_MouseMove"/>
+                <StackPanel Grid.Row="1" Grid.Column="0" 
+                Orientation="Horizontal" Margin="20 0" 
+                VerticalAlignment="Center">
+
+                    <Ellipse x:Name="AlbumArtContainer" Width="45" Height="45">
+                        <Ellipse.Effect>
+                            <DropShadowEffect BlurRadius="10" Color="Black" Opacity="0.4" ShadowDepth="2"/>
+                        </Ellipse.Effect>
                         <Ellipse.Fill>
                             <SolidColorBrush Color="#2A3550"/>
                         </Ellipse.Fill>
                     </Ellipse>
 
-                    <StackPanel Margin="10 0">
-                        <TextBlock Text="Judul Lagu" Foreground="White" x:Name="CurrentSongTitle"/>
-                        <TextBlock Text="Nama Artis" Foreground="#AEB7D3" FontSize="11" x:Name="CurrentSongArtist"/>
+                    <StackPanel Margin="12 0" VerticalAlignment="Center">
+                        <TextBlock Text="Judul Lagu" Foreground="White" 
+                       FontWeight="SemiBold" FontSize="14"
+                       x:Name="CurrentSongTitle"
+                       TextTrimming="CharacterEllipsis" MaxWidth="160"/>
+
+                        <TextBlock Text="Nama Artis" Foreground="#AEB7D3" 
+                       FontSize="12" Margin="0 2 0 0"
+                       x:Name="CurrentSongArtist"
+                       TextTrimming="CharacterEllipsis" MaxWidth="160"/>
                     </StackPanel>
                 </StackPanel>
 
-                <!-- Slider progress -->
-                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <Slider x:Name="ProgressSlider"
-                        Minimum="0"
-                        Maximum="100"
-                        Value="0"
-                        Margin="0 0 0 4"
-                        PreviewMouseLeftButtonDown="ProgressSlider_PreviewMouseDown"
-                        PreviewMouseLeftButtonUp="ProgressSlider_PreviewMouseUp"
-                        MouseMove="ProgressSlider_MouseMove"
-                        IsMoveToPointEnabled="True" />
-                    <Grid Margin="0 0 10 0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition/>
-                            <ColumnDefinition/>
-                        </Grid.ColumnDefinitions>
+                <StackPanel Grid.Row="1" Grid.Column="1" 
+                Orientation="Horizontal"
+                HorizontalAlignment="Center" VerticalAlignment="Center">
 
-                        <!-- Current time -->
-                        <TextBlock x:Name="CurrentTimeText"
-                           Text="0:00"
-                           Foreground="#AEB7D3"
-                           FontSize="11"
-                           Grid.Column="0"
-                           HorizontalAlignment="Left"/> 
+                    <Button Style="{StaticResource IconButtonStyle}" 
+                Width="35" Height="35" Margin="15 0" 
+                Click="Prev_Click" ToolTip="Previous">
+                        <Path Data="M 12,0 L 12,14 L 0,7 Z M 0,0 L 3,0 L 3,14 L 0,14 Z" 
+                  Fill="#AEB7D3" Stretch="Uniform" Height="14" Width="14"/>
+                    </Button>
 
-                        <!-- Total duration -->
-                        <TextBlock x:Name="TotalTimeText"
-                           Text="0:00"
-                           Foreground="#AEB7D3"
-                           FontSize="11"
-                           Grid.Column="1"
-                           HorizontalAlignment="Right"/>
-                    </Grid>
+                    <Button x:Name="PlayButton"
+                Style="{StaticResource PlayButtonStyle}" 
+                Margin="10 0" 
+                Click="PlayPause_Click" ToolTip="Play/Pause">
+                        <Path x:Name="PlayIcon"
+                   Data="M 0,0 L 16,9 L 0,18 Z" 
+                   Fill="#2A3550" Stretch="Uniform" 
+                   Height="20" Width="20" Margin="4,0,0,0"/>
+                    </Button>
+
+                    <Button Style="{StaticResource IconButtonStyle}" 
+                Width="35" Height="35" Margin="15 0" 
+                Click="Next_Click" ToolTip="Next">
+                        <Path Data="M 0,0 L 0,14 L 12,7 Z M 12,0 L 15,0 L 15,14 L 12,14 Z" 
+                  Fill="#AEB7D3" Stretch="Uniform" Height="14" Width="14"/>
+                    </Button>
                 </StackPanel>
 
-                <!-- Tombol kontrol -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal"
-                            HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Button Content="⏮" Width="30" Height="30" Margin="4" Click="Prev_Click"/>
-                    <Button Content="⏯" Width="30" Height="30" Margin="4" Click="PlayPause_Click"/>
-                    <Button Content="⏭" Width="30" Height="30" Margin="4" Click="Next_Click"/>
+                <StackPanel Grid.Row="1" Grid.Column="2" 
+                Orientation="Horizontal" 
+                HorizontalAlignment="Right" VerticalAlignment="Center"
+                Margin="0 0 20 0">
+
+                    <TextBlock x:Name="CurrentTimeText" Text="0:00" 
+                   Foreground="#AEB7D3" FontSize="12" FontWeight="Medium"/>
+
+                    <TextBlock Text=" / " Foreground="#586380" FontSize="12" Margin="5 0"/>
+
+                    <TextBlock x:Name="TotalTimeText" Text="0:00" 
+                   Foreground="#AEB7D3" FontSize="12" FontWeight="Medium"/>
+
                 </StackPanel>
+
             </Grid>
 
         </Grid>
