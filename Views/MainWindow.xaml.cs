@@ -18,6 +18,8 @@ namespace MusicPlayerApp.Views
         private bool isPaused = false;
         bool _isDragging = false;
         DispatcherTimer _timer = new DispatcherTimer();
+        // List untuk menyimpan SEMUA lagu (Backup)
+        private List<Song> _allSongs = new List<Song>();
 
         public MainWindow()
         {
@@ -51,8 +53,14 @@ namespace MusicPlayerApp.Views
 
         private void LoadSongs()
         {
+            // 1. Ambil data dari database/folder
             var songs = App.Music.GetAllSongs();
-            NewPlayedList.ItemsSource = songs;
+
+            // 2. Simpan ke variabel backup kita (PENTING)
+            _allSongs = songs;
+
+            // 3. Tampilkan ke layar
+            NewPlayedList.ItemsSource = _allSongs;
         }
 
         private void NewPlayedList_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -249,6 +257,30 @@ namespace MusicPlayerApp.Views
             string tooltipText = TimeSpan.FromSeconds(secHover).ToString(@"mm\:ss");
 
             ProgressSlider.ToolTip = tooltipText;
+        }
+
+        private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            // 1. Ambil teks yang diketik user & ubah jadi huruf kecil (agar tidak case sensitive)
+            string query = SearchBox.Text.ToLower();
+
+            // 2. Jika kotak pencarian kosong, tampilkan semua lagu lagi
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                NewPlayedList.ItemsSource = _allSongs;
+            }
+            else
+            {
+                // 3. Filter data dari _allSongs
+                // Mencari apakah JUDUL atau ARTIS mengandung kata kunci tersebut
+                var filteredList = _allSongs.Where(song =>
+                    song.Title.ToLower().Contains(query) ||
+                    song.Artist.ToLower().Contains(query)
+                ).ToList();
+
+                // 4. Update tampilan list dengan hasil filter
+                NewPlayedList.ItemsSource = filteredList;
+            }
         }
     }
 }

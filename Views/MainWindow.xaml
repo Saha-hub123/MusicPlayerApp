@@ -121,19 +121,42 @@
                 <!-- Bottom player -->
             </Grid.RowDefinitions>
 
-            <!-- HEADER -->
             <StackPanel Grid.Row="0" Margin="0 0 0 20">
-                <TextBlock Text="This Weekend"
-                           FontSize="36"
-                           Foreground="White"
-                           FontWeight="Bold"/>
+                <TextBlock Text="Search Music" 
+                   FontSize="24" 
+                   Foreground="White" 
+                   FontWeight="Bold" 
+                   Margin="0 0 0 15"/>
 
-                <TextBlock Text="As I was walkin' down the road to Bethlehem one night I looked up to the sky and there..."
-                           Foreground="#AEB7D3"
-                           FontSize="14"
-                           Width="500"
-                           TextWrapping="Wrap"
-                           Margin="0 5"/>
+                <Border Background="#2A3550" 
+                    CornerRadius="20" 
+                    Padding="15 8" 
+                    Width="400" 
+                    HorizontalAlignment="Left"> 
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="🔍" 
+                       Foreground="#AEB7D3" 
+                       VerticalAlignment="Center" 
+                       Margin="0 0 10 0"/>
+
+                        <TextBox x:Name="SearchBox"
+                     Grid.Column="1"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     Foreground="White"
+                     FontSize="14"
+                     CaretBrush="White"
+                     VerticalContentAlignment="Center"
+                     TextChanged="SearchBox_TextChanged" 
+                     Tag="Search songs or artists..."/>
+                    </Grid>
+                </Border>
             </StackPanel>
 
             <!-- NEW RELEASES + FOTO ARTIS -->
@@ -145,7 +168,7 @@
 
                 <!-- New Releases -->
                 <StackPanel Grid.Column="0">
-                    <TextBlock Text="New Releases"
+                    <TextBlock Text="New Songs Added"
                                FontSize="20"
                                Foreground="White"
                                Margin="0 0 0 10"/>
