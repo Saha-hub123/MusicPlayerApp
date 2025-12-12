@@ -4,6 +4,7 @@ using MusicPlayerApp.Views;
 using System.IO;
 using System.Windows;
 using Forms = System.Windows.Forms;
+using System.Diagnostics;
 
 namespace MusicPlayerApp
 {
@@ -44,12 +45,10 @@ namespace MusicPlayerApp
 
             if (!string.IsNullOrWhiteSpace(savedFolder) && Directory.Exists(savedFolder))
             {
-                // Langsung gunakan folder yang sudah disimpan
                 ChangeMusicFolder(savedFolder);
             }
             else
             {
-                // Folder tidak ada → TANYA USER sekali saja
                 var dlg = new Forms.FolderBrowserDialog();
                 dlg.Description = "Pilih folder musik";
 
@@ -57,9 +56,7 @@ namespace MusicPlayerApp
                 {
                     savedFolder = dlg.SelectedPath;
 
-                    // simpan folder ke config
                     File.WriteAllText(configPath, savedFolder);
-
                     ChangeMusicFolder(savedFolder);
                 }
                 else
@@ -70,10 +67,16 @@ namespace MusicPlayerApp
                 }
             }
 
-            // Show UI terakhir
+            // === BUAT UI TERAKHIR ===
             var main = new MainWindow();
+            MainUI = main;                // ⬅ WAJIB AGAR RefreshUI BEKERJA
             main.Show();
-            main.ReloadSongList();
+
+            // Jangan panggil ReloadSongList() sebelum UI siap
+            main.Loaded += (s, ev) =>
+            {
+                main.ReloadSongList();
+            };
         }
 
 
@@ -84,7 +87,7 @@ namespace MusicPlayerApp
 
             CurrentMusicFolder = folderPath;
 
-            // Reset dan scan awal
+            // Reset database dan scan folder
             Music.ResetDatabase();
             Music.ScanInitialFolder(folderPath);
 
@@ -99,18 +102,40 @@ namespace MusicPlayerApp
             Watcher = new FileSystemWatcher(folderPath)
             {
                 NotifyFilter = NotifyFilters.FileName |
-                   NotifyFilters.DirectoryName |
-                   NotifyFilters.LastWrite |
-                   NotifyFilters.Size,
+                               NotifyFilters.DirectoryName |
+                               NotifyFilters.LastWrite |
+                               NotifyFilters.Size,
                 IncludeSubdirectories = true
             };
 
-            Watcher.Created += (s, e) => Music.OnFileAdded(e.FullPath);
-            Watcher.Deleted += (s, e) => Music.OnFileRemoved(e.FullPath);
-            Watcher.Renamed += (s, e) => Music.OnFileRenamed(e.OldFullPath, e.FullPath);
-            Watcher.Changed += (s, e) => Music.OnFileChanged(e.FullPath);
+            // DEBUGGING agar terlihat saat event terpicu
+            Watcher.Created += (s, e) =>
+            {
+                Debug.WriteLine("FSW CREATED: " + e.FullPath);
+                Music.OnFileAdded(e.FullPath);
+            };
+
+            Watcher.Deleted += (s, e) =>
+            {
+                Debug.WriteLine("FSW DELETED: " + e.FullPath);
+                Music.OnFileRemoved(e.FullPath);
+            };
+
+            Watcher.Renamed += (s, e) =>
+            {
+                Debug.WriteLine($"FSW RENAMED: {e.OldFullPath} -> {e.FullPath}");
+                Music.OnFileRenamed(e.OldFullPath, e.FullPath);
+            };
+
+            Watcher.Changed += (s, e) =>
+            {
+                Debug.WriteLine("FSW CHANGED: " + e.FullPath);
+                Music.OnFileChanged(e.FullPath);
+            };
 
             Watcher.EnableRaisingEvents = true;
+
+            Debug.WriteLine("🎵 FileSystemWatcher ACTIVATED on folder: " + folderPath);
         }
     }
 }
