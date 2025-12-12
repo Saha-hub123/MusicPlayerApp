@@ -1,8 +1,10 @@
 ﻿using MusicPlayerApp.Models;
 using MusicPlayerApp.Services;
+using MusicPlayerApp.Views;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 
 namespace MusicPlayerApp.Controllers
 {
@@ -10,6 +12,10 @@ namespace MusicPlayerApp.Controllers
     {
         private readonly DatabaseService _db;
         private readonly AudioPlayerService _player;
+        private readonly FileScannerService _scanner = new FileScannerService();
+
+        // Debounce dictionary (hindari event berulang)
+        private static Dictionary<string, DateTime> _eventTracker = new();
 
         public MusicController(DatabaseService db, AudioPlayerService player)
         {
@@ -17,91 +23,161 @@ namespace MusicPlayerApp.Controllers
             _player = player;
         }
 
-        // Ambil semua lagu dari database
-        public List<Song> GetAllSongs()
+        private bool ShouldProcess(string path)
         {
-            return _db.GetAllSongs();
+            return true;
         }
 
-        // Tambah lagu ke database
-        public void AddSong(Song song)
+        // ================================
+        // RESET DATABASE
+        // ================================
+        public void ResetDatabase()
         {
-            _db.InsertSong(song);
+            _db.Reset();
         }
 
-        // Play lagu
-        public void PlaySong(Song song)
+        // ================================
+        // INITIAL SCAN (SAAT USER PILIH FOLDER)
+        // ================================
+        public void ScanInitialFolder(string folder)
         {
-            _player.Play(song.FilePath);
-        }
+            if (!Directory.Exists(folder)) return;
 
-        // Stop lagu
-        public void Stop()
-        {
-            _player.Stop();
-        }
-
-        public void RemoveMissingFiles()
-        {
-            var songs = _db.GetAllSongs();
-
-            foreach (var s in songs)
-                if (!File.Exists(s.FilePath))
-                    _db.DeleteSong(s.Id);
-        }
-
-        public void RefreshMetadata()
-        {
-            var songs = _db.GetAllSongs();
-            var scanner = new FileScannerService();
-
-            foreach (var song in songs)
+            foreach (var file in Directory.GetFiles(folder, "*.*", SearchOption.AllDirectories))
             {
-                if (!File.Exists(song.FilePath))
-                    continue;
+                if (!_scanner.IsAudioFile(file)) continue;
 
-                var updated = scanner.ReadMetadata(song.FilePath);
+                var song = _scanner.ReadMetadata(file);
+                _db.InsertSong(song);
+            }
+        }
+
+        // ================================
+        // FILE ADDED
+        // ================================
+        public void OnFileAdded(string path)
+        {
+            try
+            {
+                if (!ShouldProcess(path)) return;
+                if (!_scanner.IsAudioFile(path)) return;
+                if (!File.Exists(path)) return;
+
+                Thread.Sleep(100);
+
+                var existing = _db.GetByPath(path);
+                if (existing != null) return;
+
+                var song = _scanner.ReadMetadata(path);
+                _db.InsertSong(song);
+
+                RefreshUI();
+            }
+            catch { }
+        }
+
+
+        // ================================
+        // FILE REMOVED
+        // ================================
+        public void OnFileRemoved(string path)
+        {
+            try
+            {
+                if (!ShouldProcess(path)) return;
+
+                _db.DeleteByPath(path);
+                RefreshUI();
+            }
+            catch { }
+        }
+
+
+        // ================================
+        // FILE RENAMED
+        // ================================
+        public void OnFileRenamed(string oldPath, string newPath)
+        {
+            try
+            {
+                if (!ShouldProcess(newPath)) return;
+
+                var song = _db.GetByPath(oldPath);
+                if (song == null) return;
+
+                song.FilePath = newPath;
+
+                var updated = _scanner.ReadMetadata(newPath);
+                song.Title = updated.Title;
+                song.Artist = updated.Artist;
+                song.Duration = updated.Duration;
+
+                _db.UpdateSong(song);
+
+                RefreshUI();
+            }
+            catch { }
+        }
+
+        // ================================
+        // FILE CHANGED (METADATA UPDATE)
+        // ================================
+        public void OnFileChanged(string path)
+        {
+            try
+            {
+                if (!ShouldProcess(path)) return;
+                if (!File.Exists(path)) return;
+
+                Thread.Sleep(80);
+
+                var song = _db.GetByPath(path);
+                if (song == null) return;
+
+                var updated = _scanner.ReadMetadata(path);
 
                 song.Title = updated.Title;
                 song.Artist = updated.Artist;
                 song.Duration = updated.Duration;
 
                 _db.UpdateSong(song);
+
+                RefreshUI();
             }
+            catch { }
         }
 
-        public void ImportSongsFromFolder(string folderPath)
+        // ================================
+        // GET ALL SONGS
+        // ================================
+        public List<Song> GetAllSongs() => _db.GetAllSongs();
+
+        // ================================
+        // AUDIO CONTROL
+        // ================================
+        public void PlaySong(Song song)
         {
-            var scanner = new FileScannerService();
-            var existingSongs = _db.GetAllSongs();
-            var files = Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories);
-
-            foreach (var file in files)
-            {
-                if (!scanner.IsAudioFile(file)) continue;
-
-                var existing = existingSongs.FirstOrDefault(s => s.FilePath == file);
-
-                if (existing == null)
-                {
-                    // File baru → masukkan
-                    var metadata = scanner.ReadMetadata(file);
-                    _db.InsertSong(metadata);
-                }
-                else
-                {
-                    // File lama → perbarui metadata
-                    var metadata = scanner.ReadMetadata(file);
-
-                    existing.Title = metadata.Title;
-                    existing.Artist = metadata.Artist;
-                    existing.Duration = metadata.Duration;
-
-                    _db.UpdateSong(existing);
-                }
-            }
+            _player.Play(song.FilePath);
         }
 
+        public void Stop() => _player.Stop();
+
+        // =====================================================
+        //  REAL-TIME UI REFRESH (WAJIB DENGAN FileSystemWatcher)
+        // =====================================================
+        private void RefreshUI()
+        {
+            try
+            {
+                var mainWindow = App.MainUI;
+
+                if (mainWindow == null)
+                    return;
+
+                mainWindow.Dispatcher.InvokeAsync(() => mainWindow.ReloadSongList());
+            }
+            catch { }
+        }
 
     }
 }

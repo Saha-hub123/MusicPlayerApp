@@ -9,6 +9,7 @@ using MessageBox = System.Windows.MessageBox;
 using System.IO;                  // Untuk MemoryStream
 using System.Windows.Media;       // Untuk ImageBrush & Colors
 using System.Windows.Media.Imaging; // Untuk BitmapImage
+using WpfApp = System.Windows.Application;
 
 namespace MusicPlayerApp.Views
 {
@@ -17,6 +18,7 @@ namespace MusicPlayerApp.Views
         private Song _currentSong;
         private bool isPaused = false;
         bool _isDragging = false;
+        private FileSystemWatcher _localWatcher;
         DispatcherTimer _timer = new DispatcherTimer();
 
         public MainWindow()
@@ -36,10 +38,22 @@ namespace MusicPlayerApp.Views
 
                 if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                 {
-                    App.Music.ImportSongsFromFolder(dialog.SelectedPath);
-                    MessageBox.Show("Lagu berhasil diimport dari:\n" + dialog.SelectedPath);
+                    string selected = dialog.SelectedPath;
 
-                    LoadSongs(); // Refresh list
+                    // Gunakan method di App untuk mengganti folder
+                    ((App)WpfApp.Current).ChangeMusicFolder(selected);
+
+                    // Simpan folder baru ke config
+                    string configPath = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                        "MusicPlayerApp",
+                        "config.txt"
+                    );
+
+                    File.WriteAllText(configPath, selected);
+
+                    LoadSongs();
+                    MessageBox.Show("Folder musik diset ke:\n" + selected);
                 }
             }
         }
@@ -52,6 +66,14 @@ namespace MusicPlayerApp.Views
         private void LoadSongs()
         {
             var songs = App.Music.GetAllSongs();
+            NewPlayedList.ItemsSource = songs;
+        }
+
+        public void ReloadSongList()
+        {
+            var songs = App.Music.GetAllSongs();
+
+            NewPlayedList.ItemsSource = null;  // force refresh
             NewPlayedList.ItemsSource = songs;
         }
 
