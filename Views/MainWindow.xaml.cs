@@ -6,6 +6,9 @@ using System.Windows.Controls;
 using System.Windows.Forms;
 using System.Windows.Threading;
 using MessageBox = System.Windows.MessageBox;
+using System.IO;                  // Untuk MemoryStream
+using System.Windows.Media;       // Untuk ImageBrush & Colors
+using System.Windows.Media.Imaging; // Untuk BitmapImage
 
 namespace MusicPlayerApp.Views
 {
@@ -60,8 +63,58 @@ namespace MusicPlayerApp.Views
                 App.Music.PlaySong(song);
                 _timer.Start();
 
+                // Update Teks (Kode lama kamu)
                 CurrentSongTitle.Text = song.Title;
                 CurrentSongArtist.Text = song.Artist;
+
+                // --- TAMBAHAN BARU ---
+                // Panggil fungsi untuk update gambar di Ellipse
+                // Pastikan object 'song' punya properti 'FilePath'
+                UpdateAlbumArt(song.FilePath);
+            }
+        }
+
+        private void UpdateAlbumArt(string filePath)
+        {
+            try
+            {
+                // 1. Baca metadata file MP3 menggunakan TagLib
+                var file = TagLib.File.Create(filePath);
+
+                // 2. Cek apakah file memiliki gambar (Picture)
+                if (file.Tag.Pictures.Length > 0)
+                {
+                    // Ambil data gambar pertama
+                    var bin = (byte[])file.Tag.Pictures[0].Data.Data;
+
+                    // Konversi byte array menjadi BitmapImage
+                    BitmapImage albumCover = new BitmapImage();
+                    using (MemoryStream ms = new MemoryStream(bin))
+                    {
+                        albumCover.BeginInit();
+                        albumCover.CacheOption = BitmapCacheOption.OnLoad;
+                        albumCover.StreamSource = ms;
+                        albumCover.EndInit();
+                    }
+
+                    // 3. Masukkan gambar ke Ellipse (AlbumArtContainer)
+                    var brush = new ImageBrush();
+                    brush.ImageSource = albumCover;
+                    brush.Stretch = Stretch.UniformToFill; // Agar gambar pas di lingkaran
+
+                    AlbumArtContainer.Fill = brush;
+                }
+                else
+                {
+                    // Jika tidak ada gambar, kembalikan ke warna default
+                    // Pastikan kode warna sama dengan XAML awal kamu
+                    AlbumArtContainer.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2A3550"));
+                }
+            }
+            catch (Exception)
+            {
+                // Jika terjadi error (misal file rusak), set ke default
+                AlbumArtContainer.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2A3550"));
             }
         }
 
