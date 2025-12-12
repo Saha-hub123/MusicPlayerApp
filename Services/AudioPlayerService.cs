@@ -12,6 +12,9 @@ namespace MusicPlayerApp.Services
             Bass.Init();
         }
 
+        // ================================================================
+        // PLAY
+        // ================================================================
         public void Play(string filePath)
         {
             Stop(); // hentikan stream lama
@@ -20,35 +23,40 @@ namespace MusicPlayerApp.Services
 
             if (_stream == 0)
             {
-                // Jika gagal load
+                // Jika gagal load file (corrupt/missing)
                 return;
             }
 
             Bass.ChannelPlay(_stream);
         }
 
+        // ================================================================
+        // PAUSE
+        // ================================================================
         public void Pause()
         {
             if (_stream != 0)
-            {
                 Bass.ChannelPause(_stream);
-            }
         }
 
+        // ================================================================
+        // RESUME
+        // ================================================================
         public void Resume()
         {
             if (_stream != 0)
-            {
-                Bass.ChannelPlay(_stream); // Resume playback
-            }
+                Bass.ChannelPlay(_stream);
         }
 
+        // ================================================================
+        // STOP
+        // ================================================================
         public void Stop()
         {
             if (_stream != 0)
             {
-                Bass.ChannelStop(_stream);     // stop audio
-                Bass.StreamFree(_stream);      // free stream
+                Bass.ChannelStop(_stream);
+                Bass.StreamFree(_stream);
                 _stream = 0;
             }
         }

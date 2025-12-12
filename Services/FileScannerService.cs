@@ -3,23 +3,33 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using TagLib;
+using TagFile = TagLib.File;
 
 namespace MusicPlayerApp.Services
 {
     public class FileScannerService
     {
-        private readonly string[] AllowedExtensions = { ".mp3", ".wav", ".flac", ".aac" };
+        private readonly string[] AllowedExtensions = { ".mp3", ".wav", ".flac", ".aac", ".m4a" };
 
+        // ================================================================
+        // CEK EKSTENSI FILE
+        // ================================================================
         public bool IsAudioFile(string path)
         {
+            if (string.IsNullOrWhiteSpace(path)) return false;
             var ext = Path.GetExtension(path).ToLower();
             return AllowedExtensions.Contains(ext);
         }
 
-        // Scan folder dan kembalikan semua lagu
+        // ================================================================
+        // SCAN FOLDER (INITIAL LOAD)
+        // ================================================================
         public List<Song> ScanFolder(string folderPath)
         {
             var songs = new List<Song>();
+
+            if (!Directory.Exists(folderPath))
+                return songs;
 
             foreach (var file in Directory.GetFiles(folderPath, "*.*", SearchOption.AllDirectories))
             {
@@ -32,16 +42,28 @@ namespace MusicPlayerApp.Services
             return songs;
         }
 
-        // Baca metadata 1 file
+        // ================================================================
+        // SCAN SINGLE FILE (UNTUK WATCHER)
+        // ================================================================
+        public Song? ScanSingleFile(string filePath)
+        {
+            if (!IsAudioFile(filePath)) return null;
+            if (!System.IO.File.Exists(filePath)) return null;
+
+            return ReadMetadata(filePath);
+        }
+
+        // ================================================================
+        // BACA METADATA FILE
+        // ================================================================
         public Song ReadMetadata(string filePath)
         {
             try
             {
-                var tfile = TagLib.File.Create(filePath);
+                var tfile = TagFile.Create(filePath);
 
                 string title = tfile.Tag.Title ?? Path.GetFileNameWithoutExtension(filePath);
 
-                // Ambil artist dari berbagai kemungkinan field
                 string artist =
                     tfile.Tag.FirstAlbumArtist ??
                     tfile.Tag.FirstArtist ??

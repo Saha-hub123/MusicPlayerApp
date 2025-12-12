@@ -1,6 +1,8 @@
 ﻿using MusicPlayerApp.Models;
 using SQLite;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace MusicPlayerApp.Services
 {
@@ -12,37 +14,43 @@ namespace MusicPlayerApp.Services
         {
             bool firstTimeCreate = !File.Exists(path);
 
-            // Buat folder jika belum ada
             Directory.CreateDirectory(Path.GetDirectoryName(path));
 
-            // Hubungkan ke database yang SUDAH ADA, atau buat baru jika belum ada
             _db = new SQLiteConnection(path);
 
-            // Jika database BARU dibuat → baru buat tabel
             if (firstTimeCreate)
             {
                 _db.CreateTable<Song>();
             }
         }
 
-        public void InsertSong(Song song)
+        // RESET DATABASE (dipakai saat user ganti folder)
+        public void Reset()
         {
-            _db.Insert(song);
+            _db.DropTable<Song>();
+            _db.CreateTable<Song>();
         }
 
-        public List<Song> GetAllSongs()
+        // CRUD
+        public void InsertSong(Song song) => _db.Insert(song);
+
+        public List<Song> GetAllSongs() => _db.Table<Song>().ToList();
+
+        public void UpdateSong(Song song) => _db.Update(song);
+
+        public void DeleteSong(int id) => _db.Delete<Song>(id);
+
+        // GET & DELETE BY FILE PATH
+        public Song? GetByPath(string path)
         {
-            return _db.Table<Song>().ToList();
+            return _db.Table<Song>().FirstOrDefault(s => s.FilePath == path);
         }
 
-        public void UpdateSong(Song song)
+        public void DeleteByPath(string path)
         {
-            _db.Update(song);
-        }
-
-        public void DeleteSong(int id)
-        {
-            _db.Delete<Song>(id);
+            var existing = GetByPath(path);
+            if (existing != null)
+                _db.Delete(existing);
         }
     }
 }
