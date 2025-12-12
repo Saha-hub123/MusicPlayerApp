@@ -110,29 +110,23 @@ Jika file `musicplayer.db` tidak ditemukan di lokasi tersebut, Anda bisa menamba
 
 ### 📌 Cara Menambahkan MessageBox untuk Cek Lokasi Database
 
+Jika Anda ingin mengetahui lokasi pasti tempat `musicplayer.db` dibuat, Anda dapat menambahkan MessageBox setelah proses inisialisasi database di `App.xaml.cs`.
+
 Buka file:
 
 ```
 App.xaml.cs
 ```
 
-Lalu tambahkan kode ini setelah inisialisasi database:
+Kemudian tambahkan baris berikut **tepat setelah inisialisasi DatabaseService**, yaitu setelah:
 
 ```csharp
-string folder = Path.Combine(
-    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-    "MusicPlayerApp"
-);
-
-if (!Directory.Exists(folder))
-    Directory.CreateDirectory(folder);
-
-string dbPath = Path.Combine(folder, "musicplayer.db");
-
-// Inisialisasi database
 Db = new DatabaseService(dbPath);
+```
 
-// 🔍 Tambahkan MessageBox untuk melihat path DB
+Tambahkan kode MessageBox berikut:
+
+```csharp
 System.Windows.MessageBox.Show(
     $"Database berada di lokasi berikut:\n{dbPath}",
     "Lokasi Database",
@@ -140,5 +134,23 @@ System.Windows.MessageBox.Show(
     MessageBoxImage.Information
 );
 ```
-Setelah path diketahui, fitur ini **boleh dihapus** agar tidak mengganggu pengguna.
+
+### 📍 Contoh lengkapnya:
+
+```csharp
+Db = new DatabaseService(dbPath);
+Player = new AudioPlayerService();
+Music = new MusicController(Db, Player);
+
+// 🔍 Tampilkan lokasi database (opsional)
+System.Windows.MessageBox.Show(
+    $"Database berada di lokasi berikut:\n{dbPath}",
+    "Lokasi Database",
+    MessageBoxButton.OK,
+    MessageBoxImage.Information
+);
+```
+
+Setelah lokasi database diketahui, kode MessageBox ini **boleh dihapus** agar tidak mengganggu pengguna.
+
 
