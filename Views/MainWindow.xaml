@@ -231,10 +231,15 @@
 
                 <!-- Info lagu -->
                 <StackPanel Orientation="Horizontal" Margin="20 0" VerticalAlignment="Center">
-                    <Ellipse Width="40" Height="40" Fill="#2A3550"/>
+                    <Ellipse x:Name="AlbumArtContainer" Width="40" Height="40">
+                        <Ellipse.Fill>
+                            <SolidColorBrush Color="#2A3550"/>
+                        </Ellipse.Fill>
+                    </Ellipse>
+
                     <StackPanel Margin="10 0">
-                        <TextBlock Text="" Foreground="White" x:Name="CurrentSongTitle"/>
-                        <TextBlock Text="" Foreground="#AEB7D3" FontSize="11" x:Name="CurrentSongArtist"/>
+                        <TextBlock Text="Judul Lagu" Foreground="White" x:Name="CurrentSongTitle"/>
+                        <TextBlock Text="Nama Artis" Foreground="#AEB7D3" FontSize="11" x:Name="CurrentSongArtist"/>
                     </StackPanel>
                 </StackPanel>
 
