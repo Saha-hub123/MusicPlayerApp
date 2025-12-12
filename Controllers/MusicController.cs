@@ -9,7 +9,9 @@ namespace MusicPlayerApp.Controllers
     public class MusicController
     {
         private readonly DatabaseService _db;
-        private readonly AudioPlayerService _player;
+        // Menggunakan service BASS kamu
+        private AudioPlayerService _player = new AudioPlayerService();
+        public bool IsPlaying { get; private set; } = false;
 
         public MusicController(DatabaseService db, AudioPlayerService player)
         {
@@ -29,16 +31,51 @@ namespace MusicPlayerApp.Controllers
             _db.InsertSong(song);
         }
 
-        // Play lagu
+        // Method PlaySong (Memutar lagu baru dari awal)
+        // 1. Play dari awal (Ganti Lagu)
         public void PlaySong(Song song)
         {
-            _player.Play(song.FilePath);
+            try
+            {
+                // Panggil method Play milik AudioPlayerService yang butuh string
+                _player.Play(song.FilePath);
+                IsPlaying = true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Error Play: " + ex.Message);
+            }
         }
 
-        // Stop lagu
-        public void Stop()
+        // 2. Pause Lagu
+        public void Pause()
+        {
+            if (IsPlaying)
+            {
+                _player.Pause(); // Panggil method Pause di AudioPlayerService
+                IsPlaying = false;
+            }
+        }
+
+        // 3. Resume (Lanjut Main) -- BAGIAN INI YANG DIPERBAIKI
+        public void Resume()
+        {
+            if (!IsPlaying)
+            {
+                // JANGAN panggil _player.Play(); karena itu butuh parameter string
+
+                // TAPI panggil method Resume() yang sudah kamu buat di service
+                _player.Resume();
+
+                IsPlaying = true;
+            }
+        }
+
+        // 4. Stop Total
+        public void StopSong()
         {
             _player.Stop();
+            IsPlaying = false;
         }
 
         public void RemoveMissingFiles()

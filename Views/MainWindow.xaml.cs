@@ -28,6 +28,7 @@ namespace MusicPlayerApp.Views
 
             _timer.Interval = TimeSpan.FromMilliseconds(500);
             _timer.Tick += UpdateProgress;
+
         }
 
         private void ImportSongs_Click(object sender, RoutedEventArgs e)
@@ -79,6 +80,9 @@ namespace MusicPlayerApp.Views
                 // Panggil fungsi untuk update gambar di Ellipse
                 // Pastikan object 'song' punya properti 'FilePath'
                 UpdateAlbumArt(song.FilePath);
+                // --- TAMBAHAN BARU ---
+                // Karena lagu baru mulai, paksa ikon jadi PAUSE
+                UpdatePlayState(true);
             }
         }
 
@@ -128,68 +132,84 @@ namespace MusicPlayerApp.Views
 
         private void PlayPause_Click(object sender, RoutedEventArgs e)
         {
-            if (_currentSong == null) return;
-
-            if (isPaused)
+            // Cek apakah ada lagu yang dipilih
+            if (_currentSong == null)
             {
-                App.Player.Resume();
-                isPaused = false;
+                // Opsional: Mainkan lagu pertama dari list jika belum ada yang dipilih
+                if (NewPlayedList.Items.Count > 0)
+                {
+                    var firstSong = (Song)NewPlayedList.Items[0];
+                    NewPlayedList.SelectedItem = firstSong; // Trigger selection logic
+                                                            // (Logika double click akan menangani play)
+                }
+                return;
+            }
+
+            // Logika Toggle
+            if (App.Music.IsPlaying)
+            {
+                // Jika sedang main -> PAUSE
+                App.Music.Pause();
+                UpdatePlayState(false); // Ubah ikon jadi Segitiga
+                _timer.Stop();
             }
             else
             {
-                App.Player.Pause();
-                isPaused = true;
+                // Jika sedang diam -> RESUME
+                App.Music.Resume();     // Ini sekarang memanggil _player.Resume()
+                UpdatePlayState(true);  // Ubah ikon jadi Pause (Garis dua)
+                _timer.Start();
             }
         }
 
         private void Next_Click(object sender, RoutedEventArgs e)
         {
-            var songs = App.Music.GetAllSongs();
-            if (_currentSong == null || songs.Count == 0) return;
+            // Ambil list yang SEDANG TAMPIL (agar fitur Search tidak rusak)
+            var currentList = NewPlayedList.ItemsSource as List<Song>;
+            // Jika null (misal saat awal buka), ambil dari backup
+            if (currentList == null) currentList = _allSongs;
 
-            int index = songs.FindIndex(s => s.FilePath == _currentSong.FilePath);
+            if (_currentSong == null || currentList.Count == 0) return;
+
+            // Cari index lagu sekarang di dalam list yang aktif
+            int index = currentList.FindIndex(s => s.FilePath == _currentSong.FilePath);
             if (index == -1) index = 0;
 
-            // wrap-around: jika index terakhir → kembali ke 0
-            int newIndex = (index + 1) % songs.Count;
+            // Hitung Next Index (Wrap around)
+            int newIndex = (index + 1) % currentList.Count;
 
-            _currentSong = songs[newIndex];
+            // Ambil lagu baru
+            _currentSong = currentList[newIndex];
+
+            // Mainkan
             App.Music.PlaySong(_currentSong);
-
-            CurrentSongTitle.Text = _currentSong.Title;
-            CurrentSongArtist.Text = _currentSong.Artist;
-
-            NewPlayedList.SelectedIndex = newIndex;
-            NewPlayedList.ScrollIntoView(NewPlayedList.SelectedItem);
-
-            _timer.Stop();
             _timer.Start();
-            isPaused = false;
+
+            // Update SEMUA tampilan (Gambar, Teks, Ikon) lewat fungsi helper
+            UpdateSongDisplay(_currentSong);
         }
 
         private void Prev_Click(object sender, RoutedEventArgs e)
         {
-            var songs = App.Music.GetAllSongs();
-            if (_currentSong == null || songs.Count == 0) return;
+            var currentList = NewPlayedList.ItemsSource as List<Song>;
+            if (currentList == null) currentList = _allSongs;
 
-            int index = songs.FindIndex(s => s.FilePath == _currentSong.FilePath);
+            if (_currentSong == null || currentList.Count == 0) return;
+
+            int index = currentList.FindIndex(s => s.FilePath == _currentSong.FilePath);
             if (index == -1) index = 0;
 
-            // wrap-around: jika index 0 → pindah ke index terakhir
-            int newIndex = (index - 1 + songs.Count) % songs.Count;
+            // Hitung Prev Index (Wrap around logic yang benar)
+            // Ditambah currentList.Count agar tidak bernilai negatif
+            int newIndex = (index - 1 + currentList.Count) % currentList.Count;
 
-            _currentSong = songs[newIndex];
+            _currentSong = currentList[newIndex];
+
             App.Music.PlaySong(_currentSong);
-
-            CurrentSongTitle.Text = _currentSong.Title;
-            CurrentSongArtist.Text = _currentSong.Artist;
-
-            NewPlayedList.SelectedIndex = newIndex;
-            NewPlayedList.ScrollIntoView(NewPlayedList.SelectedItem);
-
-            _timer.Stop();
             _timer.Start();
-            isPaused = false;
+
+            // Update SEMUA tampilan
+            UpdateSongDisplay(_currentSong);
         }
 
         private void UpdateProgress(object sender, EventArgs e)
@@ -281,6 +301,56 @@ namespace MusicPlayerApp.Views
                 // 4. Update tampilan list dengan hasil filter
                 NewPlayedList.ItemsSource = filteredList;
             }
+
+        }
+
+        private void UpdatePlayState(bool isPlaying)
+        {
+            if (isPlaying)
+            {
+                // --- TAMPILKAN IKON PAUSE (Garis Dua) ---
+                // Kita menggambar dua persegi panjang vertikal
+                PlayIcon.Data = Geometry.Parse("M 0,0 L 5,0 L 5,16 L 0,16 Z M 9,0 L 14,0 L 14,16 L 9,16 Z");
+
+                // Reset margin agar pas di tengah
+                PlayIcon.Margin = new Thickness(0);
+
+                // (Opsional) Ubah tooltip
+                PlayButton.ToolTip = "Pause";
+            }
+            else
+            {
+                // --- TAMPILKAN IKON PLAY (Segitiga) ---
+                PlayIcon.Data = Geometry.Parse("M 0,0 L 16,9 L 0,18 Z");
+
+                // Geser sedikit ke kanan (4px) agar terlihat seimbang secara visual
+                PlayIcon.Margin = new Thickness(4, 0, 0, 0);
+
+                // (Opsional) Ubah tooltip
+                PlayButton.ToolTip = "Play";
+            }
+        }
+
+        private void UpdateSongDisplay(Song song)
+        {
+            // 1. Update Teks
+            CurrentSongTitle.Text = song.Title;
+            CurrentSongArtist.Text = song.Artist;
+
+            // 2. Update Gambar Album (INI YANG HILANG SEBELUMNYA)
+            UpdateAlbumArt(song.FilePath);
+
+            // 3. Update Status Tombol Play (Jadi Pause)
+            UpdatePlayState(true);
+            isPaused = false;
+
+            // 4. Reset Slider & Waktu
+            ProgressSlider.Value = 0;
+            CurrentTimeText.Text = "0:00";
+
+            // 5. Update Highlight di List
+            NewPlayedList.SelectedItem = song;
+            NewPlayedList.ScrollIntoView(song);
         }
     }
 }

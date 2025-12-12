@@ -52,5 +52,31 @@ namespace MusicPlayerApp.Services
                 _stream = 0;
             }
         }
+
+        // Tambahkan di dalam class AudioPlayerService
+
+        // Mengambil Durasi Total (dalam Detik)
+        public double GetTotalDurationSeconds()
+        {
+            if (_stream == 0) return 0;
+            long length = Bass.ChannelGetLength(_stream); // Panjang dalam bytes
+            return Bass.ChannelBytes2Seconds(_stream, length); // Konversi ke detik
+        }
+
+        // Mengambil Posisi Sekarang (dalam Detik)
+        public double GetCurrentPositionSeconds()
+        {
+            if (_stream == 0) return 0;
+            long pos = Bass.ChannelGetPosition(_stream); // Posisi dalam bytes
+            return Bass.ChannelBytes2Seconds(_stream, pos); // Konversi ke detik
+        }
+
+        // Mengubah Posisi (Saat slider digeser user)
+        public void SetPosition(double seconds)
+        {
+            if (_stream == 0) return;
+            long bytes = Bass.ChannelSeconds2Bytes(_stream, seconds);
+            Bass.ChannelSetPosition(_stream, bytes);
+        }
     }
 }
