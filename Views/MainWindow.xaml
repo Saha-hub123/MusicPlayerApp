@@ -149,6 +149,44 @@
             </Setter>
         </Style>
 
+        <Style x:Key="ModernScrollBarStyle" TargetType="{x:Type ScrollBar}">
+            <Setter Property="Stylus.IsFlicksEnabled" Value="false" />
+            <Setter Property="Foreground" Value="#5CD1FF" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Width" Value="8" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ScrollBar}">
+                        <Grid x:Name="GridRoot" Width="8" Background="{TemplateBinding Background}">
+                            <Track x:Name="PART_Track" IsDirectionReversed="true" Focusable="false">
+                                <Track.Thumb>
+                                    <Thumb x:Name="Thumb">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="{x:Type Thumb}">
+                                                <Border CornerRadius="4" 
+                                                    Background="#4A5675" 
+                                                    Width="6"/>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.LineUpCommand" Opacity="0" Focusable="false"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.LineDownCommand" Opacity="0" Focusable="false"/>
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="true">
+                                <Setter TargetName="Thumb" Property="Background" Value="#6F7A95" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <!-- ========= LAYOUT UTAMA ========= -->
@@ -164,22 +202,30 @@
         <Border Grid.Column="0" Background="#1B2338">
             <StackPanel Margin="20">
                 <!-- Judul / Nama user -->
-                <TextBlock Text="Rihanna"
+                <TextBlock Text="Musics"
                            FontSize="22"
                            Foreground="White"
                            FontWeight="Bold"
                            Margin="0 10"/>
 
                 <!-- BROWSE -->
-                <TextBlock Text="Browse"
-                           Foreground="#6F7A95"
-                           FontSize="12"
-                           Margin="0 20 0 5"/>
+                <TextBlock Text="Browse" Foreground="#6F7A95" FontSize="12" Margin="0 20 0 5"/>
 
-                <Button Content="Discover"   Style="{StaticResource SidebarButtonStyle}" />
-                <Button Content="Songs"      Style="{StaticResource SidebarButtonStyle}" />
-                <Button Content="Top charts" Style="{StaticResource SidebarButtonStyle}" />
-                <Button Content="Artist"     Style="{StaticResource SidebarButtonStyle}" />
+                <Button x:Name="BtnDiscover" Content="Discover" 
+        Style="{StaticResource SidebarButtonStyle}" 
+        Click="Filter_Click" Tag="Discover"/>
+
+                <Button x:Name="BtnSongs" Content="Songs"    
+        Style="{StaticResource SidebarButtonStyle}" 
+        Click="Filter_Click" Tag="Songs"/>
+
+                <Button x:Name="BtnAlbums" Content="Albums"   
+        Style="{StaticResource SidebarButtonStyle}" 
+        Click="Filter_Click" Tag="Albums"/>
+
+                <Button x:Name="BtnArtists" Content="Artist"   
+        Style="{StaticResource SidebarButtonStyle}" 
+        Click="Filter_Click" Tag="Artist"/>
 
                 <!-- PLAYLIST -->
                 <TextBlock Text="Playlist"
@@ -204,145 +250,96 @@
         </Border>
 
         <!-- ========== KONTEN UTAMA ========== -->
-        <Grid Grid.Column="1" Margin="20">
+        <Grid Grid.Column="1" Margin="20 20 20 0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <!-- Header -->
-                <RowDefinition Height="220"/>
-                <!-- New releases -->
                 <RowDefinition Height="Auto"/>
-                <!-- Title "New played" -->
-                <RowDefinition/>
-                <!-- List lagu -->
-                <RowDefinition Height="70"/>
-                <!-- Bottom player -->
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <StackPanel Grid.Row="0" Margin="0 0 0 20">
-                <TextBlock Text="Search Music" 
-                   FontSize="24" 
-                   Foreground="White" 
-                   FontWeight="Bold" 
-                   Margin="0 0 0 15"/>
-
-                <Border Background="#2A3550" 
-                    CornerRadius="20" 
-                    Padding="15 8" 
-                    Width="400" 
-                    HorizontalAlignment="Left"> 
-
+            <StackPanel Grid.Row="0" Margin="0 0 0 10">
+                <TextBlock Text="Search Music" FontSize="24" Foreground="White" FontWeight="Bold" Margin="0 0 0 15"/>
+                <Border Background="#2A3550" CornerRadius="20" Padding="15 8" Width="400" HorizontalAlignment="Left">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-
-                        <TextBlock Text="🔍" 
-                       Foreground="#AEB7D3" 
-                       VerticalAlignment="Center" 
-                       Margin="0 0 10 0"/>
-
-                        <TextBox x:Name="SearchBox"
-                     Grid.Column="1"
-                     Background="Transparent"
-                     BorderThickness="0"
-                     Foreground="White"
-                     FontSize="14"
-                     CaretBrush="White"
-                     VerticalContentAlignment="Center"
-                     TextChanged="SearchBox_TextChanged" 
-                     Tag="Search songs or artists..."/>
+                        <TextBlock Text="🔍" Foreground="#AEB7D3" VerticalAlignment="Center" Margin="0 0 10 0"/>
+                        <TextBox x:Name="SearchBox" Grid.Column="1" Background="Transparent" BorderThickness="0" 
+                         Foreground="White" FontSize="14" CaretBrush="White" VerticalContentAlignment="Center"
+                         TextChanged="SearchBox_TextChanged" Tag="Search songs..."/>
                     </Grid>
                 </Border>
             </StackPanel>
 
-            <!-- NEW RELEASES + FOTO ARTIS -->
-            <Grid Grid.Row="1">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition/>
-                    <ColumnDefinition Width="320"/>
-                </Grid.ColumnDefinitions>
+            <TextBlock Grid.Row="1" Text="Music" FontSize="20" Foreground="White" Margin="0 10 0 10"/>
 
-                <!-- New Releases -->
-                <StackPanel Grid.Column="0">
-                    <TextBlock Text="New Songs Added"
-                               FontSize="20"
-                               Foreground="White"
-                               Margin="0 0 0 10"/>
-
-                    <StackPanel Orientation="Horizontal">
-                        <!-- Kartu dummy -->
-                        <Border Width="120" Height="150" Margin="0 0 10 0"
-                                Background="#2A3550" CornerRadius="15">
-                            <StackPanel VerticalAlignment="Bottom" Margin="10" >
-                                <TextBlock Text="Rihanna" Foreground="White" FontWeight="Bold"/>
-                                <TextBlock Text="Singer"  Foreground="#AEB7D3" FontSize="12"/>
-                            </StackPanel>
-                        </Border>
-
-                        <Border Width="120" Height="150" Margin="0 0 10 0"
-                                Background="#2A3550" CornerRadius="15"/>
-
-                        <Border Width="120" Height="150"
-                                Background="#2A3550" CornerRadius="15"/>
-                    </StackPanel>
-                </StackPanel>
-
-                <!-- Foto artis besar (dummy) -->
-                <Border Grid.Column="1"
-                        Background="#2A3550"
-                        CornerRadius="25"
-                        Margin="20 0 0 0">
-                    <TextBlock Text="Artist Image"
-                               Foreground="#AEB7D3"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center"/>
-                </Border>
-            </Grid>
-
-            <!-- Title New Played -->
-            <TextBlock Grid.Row="2"
-                       Text="New played"
-                       FontSize="20"
-                       Foreground="White"
-                       Margin="0 20 0 10"/>
-
-            <!-- List Lagu -->
-            <ListView Grid.Row="3"
+            <ListView Grid.Row="2"
           x:Name="NewPlayedList"
           Background="Transparent"
           BorderThickness="0"
           ItemContainerStyle="{StaticResource MusicListItemStyle}"
-          MouseDoubleClick="NewPlayedList_MouseDoubleClick">
+          MouseDoubleClick="NewPlayedList_MouseDoubleClick"
+          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+          ScrollViewer.VerticalScrollBarVisibility="Auto"
+          Margin="0 0 0 10">
+
+                <ListView.Resources>
+                    <Style TargetType="ScrollBar" BasedOn="{StaticResource ModernScrollBarStyle}"/>
+                </ListView.Resources>
+
+                <ListView.GroupStyle>
+                    <GroupStyle>
+                        <GroupStyle.HeaderTemplate>
+                            <DataTemplate>
+                                <Border Background="#1F2940" Padding="15 8" Margin="0 15 0 8" CornerRadius="6">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="4" Height="18" Background="#5CD1FF" CornerRadius="2" Margin="0 0 10 0"/>
+
+                                        <TextBlock Text="{Binding Name}" 
+                                       Foreground="White" 
+                                       FontWeight="Bold" 
+                                       FontSize="24"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </GroupStyle.HeaderTemplate>
+                    </GroupStyle>
+                </ListView.GroupStyle>
 
                 <ListView.ItemTemplate>
                     <DataTemplate>
-                        <Grid>
+                        <Grid Margin="0 4">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="40"/>
-                                <ColumnDefinition/>
-                                <ColumnDefinition Width="120"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="150"/>
                                 <ColumnDefinition Width="60"/>
                             </Grid.ColumnDefinitions>
 
-                            <TextBlock Text="▶" Grid.Column="0" VerticalAlignment="Center"/>
+                            <TextBlock Text="▶" Grid.Column="0" VerticalAlignment="Center" 
+                           Foreground="#5CD1FF" FontSize="10" Opacity="0.8"/>
 
-                            <TextBlock Text="{Binding Title}" Grid.Column="1" Foreground="White"/>
-                            <TextBlock Text="{Binding Artist}" Grid.Column="2" Foreground="#AEB7D3"/>
+                            <TextBlock Text="{Binding Title}" Grid.Column="1" 
+                           Foreground="White" FontSize="14" FontWeight="SemiBold"
+                           TextTrimming="CharacterEllipsis"/>
 
-                            <TextBlock Text="{Binding DurationFormatted}"
+                            <TextBlock Text="{Binding Artist}" Grid.Column="2" 
+                           Foreground="#AEB7D3" FontSize="13"
+                           TextTrimming="CharacterEllipsis"/>
+
+                            <TextBlock Text="{Binding DurationFormatted}" 
                            Grid.Column="3"
                            HorizontalAlignment="Right"
-                           Foreground="#AEB7D3"/>
+                           Foreground="#6F7A95" FontSize="13" FontWeight="Medium"/>
                         </Grid>
                     </DataTemplate>
                 </ListView.ItemTemplate>
-
             </ListView>
 
-
-            <!-- BOTTOM MINI PLAYER -->
-            <Grid Grid.Row="4" Background="#151C30">
+            <Grid Grid.Row="3" Background="#151C30" Height="85" VerticalAlignment="Bottom">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
@@ -355,21 +352,16 @@
                 </Grid.ColumnDefinitions>
 
                 <Slider x:Name="ProgressSlider"
-            Grid.Row="0" Grid.ColumnSpan="3"
-            Style="{StaticResource ModernSliderStyle}" 
-            Minimum="0" Maximum="100" Value="0"
-            Cursor="Hand"
-            IsMoveToPointEnabled="True"
-            VerticalAlignment="Top"
-            Margin="-5 -5 -5 0" 
-            Height="16"
-            PreviewMouseLeftButtonDown="ProgressSlider_PreviewMouseDown"
-            PreviewMouseLeftButtonUp="ProgressSlider_PreviewMouseUp"
-            MouseMove="ProgressSlider_MouseMove"/>
-                <StackPanel Grid.Row="1" Grid.Column="0" 
-                Orientation="Horizontal" Margin="20 0" 
-                VerticalAlignment="Center">
+                Grid.Row="0" Grid.ColumnSpan="3"
+                Style="{StaticResource ModernSliderStyle}" 
+                Minimum="0" Maximum="100" Value="0"
+                Cursor="Hand" IsMoveToPointEnabled="True"
+                VerticalAlignment="Top" Margin="-5 -5 -5 0" Height="16"
+                PreviewMouseLeftButtonDown="ProgressSlider_PreviewMouseDown"
+                PreviewMouseLeftButtonUp="ProgressSlider_PreviewMouseUp"
+                MouseMove="ProgressSlider_MouseMove"/>
 
+                <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Margin="20 0" VerticalAlignment="Center">
                     <Ellipse x:Name="AlbumArtContainer" Width="45" Height="45">
                         <Ellipse.Effect>
                             <DropShadowEffect BlurRadius="10" Color="Black" Opacity="0.4" ShadowDepth="2"/>
@@ -380,64 +372,33 @@
                     </Ellipse>
 
                     <StackPanel Margin="12 0" VerticalAlignment="Center">
-                        <TextBlock Text="Judul Lagu" Foreground="White" 
-                       FontWeight="SemiBold" FontSize="14"
-                       x:Name="CurrentSongTitle"
-                       TextTrimming="CharacterEllipsis" MaxWidth="160"/>
-
-                        <TextBlock Text="Nama Artis" Foreground="#AEB7D3" 
-                       FontSize="12" Margin="0 2 0 0"
-                       x:Name="CurrentSongArtist"
-                       TextTrimming="CharacterEllipsis" MaxWidth="160"/>
+                        <TextBlock Text="Judul Lagu" Foreground="White" FontWeight="SemiBold" FontSize="14" x:Name="CurrentSongTitle" TextTrimming="CharacterEllipsis" MaxWidth="160"/>
+                        <TextBlock Text="Nama Artis" Foreground="#AEB7D3" FontSize="12" Margin="0 2 0 0" x:Name="CurrentSongArtist" TextTrimming="CharacterEllipsis" MaxWidth="160"/>
                     </StackPanel>
                 </StackPanel>
 
-                <StackPanel Grid.Row="1" Grid.Column="1" 
-                Orientation="Horizontal"
-                HorizontalAlignment="Center" VerticalAlignment="Center">
-
-                    <Button Style="{StaticResource IconButtonStyle}" 
-                Width="35" Height="35" Margin="15 0" 
-                Click="Prev_Click" ToolTip="Previous">
-                        <Path Data="M 12,0 L 12,14 L 0,7 Z M 0,0 L 3,0 L 3,14 L 0,14 Z" 
-                  Fill="#AEB7D3" Stretch="Uniform" Height="14" Width="14"/>
+                <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Button Style="{StaticResource IconButtonStyle}" Width="35" Height="35" Margin="15 0" Click="Prev_Click" ToolTip="Previous">
+                        <Path Data="M 12,0 L 12,14 L 0,7 Z M 0,0 L 3,0 L 3,14 L 0,14 Z" Fill="#AEB7D3" Stretch="Uniform" Height="14" Width="14"/>
                     </Button>
 
-                    <Button x:Name="PlayButton"
-                Style="{StaticResource PlayButtonStyle}" 
-                Margin="10 0" 
-                Click="PlayPause_Click" ToolTip="Play/Pause">
-                        <Path x:Name="PlayIcon"
-                   Data="M 0,0 L 16,9 L 0,18 Z" 
-                   Fill="#2A3550" Stretch="Uniform" 
-                   Height="20" Width="20" Margin="4,0,0,0"/>
+                    <Button x:Name="PlayButton" Style="{StaticResource PlayButtonStyle}" Margin="10 0" Click="PlayPause_Click" ToolTip="Play/Pause">
+                        <Path x:Name="PlayIcon" Data="M 0,0 L 16,9 L 0,18 Z" Fill="#2A3550" Stretch="Uniform" Height="20" Width="20" Margin="4,0,0,0"/>
                     </Button>
 
-                    <Button Style="{StaticResource IconButtonStyle}" 
-                Width="35" Height="35" Margin="15 0" 
-                Click="Next_Click" ToolTip="Next">
-                        <Path Data="M 0,0 L 0,14 L 12,7 Z M 12,0 L 15,0 L 15,14 L 12,14 Z" 
-                  Fill="#AEB7D3" Stretch="Uniform" Height="14" Width="14"/>
+                    <Button Style="{StaticResource IconButtonStyle}" Width="35" Height="35" Margin="15 0" Click="Next_Click" ToolTip="Next">
+                        <Path Data="M 0,0 L 0,14 L 12,7 Z M 12,0 L 15,0 L 15,14 L 12,14 Z" Fill="#AEB7D3" Stretch="Uniform" Height="14" Width="14"/>
                     </Button>
                 </StackPanel>
 
-                <StackPanel Grid.Row="1" Grid.Column="2" 
-                Orientation="Horizontal" 
-                HorizontalAlignment="Right" VerticalAlignment="Center"
-                Margin="0 0 20 0">
-
-                    <TextBlock x:Name="CurrentTimeText" Text="0:00" 
-                   Foreground="#AEB7D3" FontSize="12" FontWeight="Medium"/>
-
+                <StackPanel Grid.Row="1" Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0 0 20 0">
+                    <TextBlock x:Name="CurrentTimeText" Text="0:00" Foreground="#AEB7D3" FontSize="12" FontWeight="Medium"/>
                     <TextBlock Text=" / " Foreground="#586380" FontSize="12" Margin="5 0"/>
-
-                    <TextBlock x:Name="TotalTimeText" Text="0:00" 
-                   Foreground="#AEB7D3" FontSize="12" FontWeight="Medium"/>
-
+                    <TextBlock x:Name="TotalTimeText" Text="0:00" Foreground="#AEB7D3" FontSize="12" FontWeight="Medium"/>
                 </StackPanel>
-
             </Grid>
-
         </Grid>
+
+
     </Grid>
 </Window>

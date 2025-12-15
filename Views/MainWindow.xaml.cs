@@ -1,14 +1,18 @@
 ﻿using ManagedBass;
 using MusicPlayerApp.Controllers;
 using MusicPlayerApp.Models;
+using System.ComponentModel;
+using System.IO;                  // Untuk MemoryStream
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Forms;
-using System.Windows.Threading;
-using MessageBox = System.Windows.MessageBox;
-using System.IO;                  // Untuk MemoryStream
 using System.Windows.Media;       // Untuk ImageBrush & Colors
 using System.Windows.Media.Imaging; // Untuk BitmapImage
+using System.Windows.Threading;
+// Tambahkan baris ini untuk menegaskan bahwa 'Button' adalah milik WPF
+using Button = System.Windows.Controls.Button;
+using MessageBox = System.Windows.MessageBox;
 using WpfApp = System.Windows.Application;
 
 namespace MusicPlayerApp.Views
@@ -373,6 +377,80 @@ namespace MusicPlayerApp.Views
             // 5. Update Highlight di List
             NewPlayedList.SelectedItem = song;
             NewPlayedList.ScrollIntoView(song);
+        }
+
+        private void Filter_Click(object sender, RoutedEventArgs e)
+        {
+            Button clickedButton = sender as Button;
+            string filterType = clickedButton.Tag.ToString();
+            ResetSidebarButtons();
+
+            // Highlight tombol
+            clickedButton.Foreground = Brushes.White;
+            clickedButton.FontWeight = FontWeights.Bold;
+
+            // 1. Set ItemsSource ke SEMUA LAGU dulu (Reset)
+            NewPlayedList.ItemsSource = _allSongs;
+
+            // 2. Ambil "View" dari List (Ini controller untuk Grouping/Sorting)
+            ICollectionView view = CollectionViewSource.GetDefaultView(NewPlayedList.ItemsSource);
+
+            // Bersihkan sorting & grouping lama
+            view.SortDescriptions.Clear();
+            view.GroupDescriptions.Clear();
+
+            // 3. Terapkan Logika Baru
+            switch (filterType)
+            {
+                case "Discover":
+                    // Discover: Urutkan tanggal terbaru, TANPA Grouping
+                    view.SortDescriptions.Add(new SortDescription("DateAdded", ListSortDirection.Descending));
+                    break;
+
+                case "Songs":
+                    // Songs: Grouping berdasarkan HURUF PERTAMA (A, B, C...)
+                    view.GroupDescriptions.Add(new PropertyGroupDescription("FirstLetter"));
+                    view.SortDescriptions.Add(new SortDescription("Title", ListSortDirection.Ascending));
+                    break;
+
+                case "Albums":
+                    // Albums: Grouping berdasarkan NAMA ALBUM
+                    view.GroupDescriptions.Add(new PropertyGroupDescription("Album"));
+                    view.SortDescriptions.Add(new SortDescription("Album", ListSortDirection.Ascending));
+                    // Di dalam album, urutkan track/judul
+                    view.SortDescriptions.Add(new SortDescription("Title", ListSortDirection.Ascending));
+                    break;
+
+                case "Artist":
+                    // Artist: Grouping berdasarkan NAMA ARTIS
+                    view.GroupDescriptions.Add(new PropertyGroupDescription("Artist"));
+                    view.SortDescriptions.Add(new SortDescription("Artist", ListSortDirection.Ascending));
+                    break;
+            }
+        }
+
+        // Fungsi helper untuk mereset tampilan tombol
+        private void ResetSidebarButtons()
+        {
+            // Kembalikan warna ke abu-abu (sesuai tema kamu)
+            var defaultColor = (Brush)new BrushConverter().ConvertFrom("#6F7A95");
+
+            BtnDiscover.Foreground = defaultColor;
+            BtnDiscover.FontWeight = FontWeights.Normal;
+
+            BtnSongs.Foreground = defaultColor;
+            BtnSongs.FontWeight = FontWeights.Normal;
+
+            BtnAlbums.Foreground = defaultColor;
+            BtnAlbums.FontWeight = FontWeights.Normal;
+
+            BtnArtists.Foreground = defaultColor;
+            BtnArtists.FontWeight = FontWeights.Normal;
+        }
+
+        private void NewPlayedList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
         }
     }
 }

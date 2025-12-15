@@ -60,35 +60,54 @@ namespace MusicPlayerApp.Services
         {
             try
             {
-                var tfile = TagFile.Create(filePath);
+                // Menggunakan TagLib#
+                // Perhatikan: biasanya librarynya 'TagLib.File', bukan 'TagFile'. 
+                // Jika kamu pakai alias 'using TagFile = TagLib.File;', kode ini aman.
+                var tfile = TagLib.File.Create(filePath);
 
+                // 1. Ambil Judul
                 string title = tfile.Tag.Title ?? Path.GetFileNameWithoutExtension(filePath);
 
+                // 2. Ambil Artis (Logika kamu sudah bagus)
                 string artist =
                     tfile.Tag.FirstAlbumArtist ??
                     tfile.Tag.FirstArtist ??
                     tfile.Tag.Performers?.FirstOrDefault() ??
                     tfile.Tag.Artists?.FirstOrDefault() ??
-                    "Unknown";
+                    "Unknown Artist";
 
+                // 3. Ambil Album (BARU)
+                string album = tfile.Tag.Album ?? "Unknown Album";
+
+                // 4. Ambil Durasi
                 double duration = tfile.Properties.Duration.TotalSeconds;
+
+                // 5. Ambil Tanggal File dibuat (BARU - untuk fitur Discover)
+                // Kita ambil info file fisik dari Windows
+                FileInfo fileInfo = new FileInfo(filePath);
+                DateTime dateAdded = fileInfo.CreationTime;
 
                 return new Song
                 {
                     Title = title,
                     Artist = artist,
+                    Album = album,          // Masukkan ke object
                     Duration = duration,
-                    FilePath = filePath
+                    FilePath = filePath,
+                    DateAdded = dateAdded   // Masukkan ke object
                 };
             }
-            catch
+            catch (Exception)
             {
+                // Jika file rusak/corrupt, buat data dummy agar tidak error
                 return new Song
                 {
                     Title = Path.GetFileNameWithoutExtension(filePath),
                     Artist = "Unknown",
+                    Album = "Unknown",
                     Duration = 0,
-                    FilePath = filePath
+                    FilePath = filePath,
+                    DateAdded = DateTime.Now // Default ke waktu sekarang
                 };
             }
         }

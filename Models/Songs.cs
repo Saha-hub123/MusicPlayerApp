@@ -19,5 +19,17 @@ namespace MusicPlayerApp.Models
                 return ts.ToString(@"mm\:ss");
             }
         }
+        // Tambahan untuk fitur baru
+        public string Album { get; set; }
+        public DateTime DateAdded { get; set; } // Untuk fitur "Discover" (Terbaru)
+
+        public string FirstLetter
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(Title)) return "#";
+                return Title.Substring(0, 1).ToUpper();
+            }
+        }
     }
 }
