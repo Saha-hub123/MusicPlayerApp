@@ -1,6 +1,6 @@
 ﻿using MusicPlayerApp.Models;
 using MusicPlayerApp.Services;
-using MusicPlayerApp.Views;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -12,11 +12,12 @@ namespace MusicPlayerApp.Controllers
     {
         private readonly DatabaseService _db;
         private readonly FileScannerService _scanner = new FileScannerService();
-        private AudioPlayerService _player = new AudioPlayerService();
+        private readonly AudioPlayerService _player;
         public bool IsPlaying { get; private set; } = false;
 
         // Debounce dictionary (hindari event berulang)
         private static Dictionary<string, DateTime> _eventTracker = new();
+        private static readonly object _lock = new();
 
         public MusicController(DatabaseService db, AudioPlayerService player)
         {
@@ -24,22 +25,29 @@ namespace MusicPlayerApp.Controllers
             _player = player;
         }
 
-        private bool ShouldProcess(string path)
+        // Digunakan untuk debounce FileSystemWatcher
+        private bool ShouldProcess(string path, int debounceMs = 500)
         {
-            return true;
+            lock (_lock)
+            {
+                if (_eventTracker.TryGetValue(path, out var last))
+                {
+                    if ((DateTime.Now - last).TotalMilliseconds < debounceMs)
+                        return false;
+                }
+
+                _eventTracker[path] = DateTime.Now;
+                return true;
+            }
         }
 
-        // ================================
         // RESET DATABASE
-        // ================================
         public void ResetDatabase()
         {
             _db.Reset();
         }
 
-        // ================================
         // INITIAL SCAN (SAAT USER PILIH FOLDER)
-        // ================================
         public void ScanInitialFolder(string folder)
         {
             if (!Directory.Exists(folder)) return;
@@ -53,9 +61,7 @@ namespace MusicPlayerApp.Controllers
             }
         }
 
-        // ================================
         // FILE ADDED
-        // ================================
         public void OnFileAdded(string path)
         {
             try
@@ -64,23 +70,23 @@ namespace MusicPlayerApp.Controllers
                 if (!_scanner.IsAudioFile(path)) return;
                 if (!File.Exists(path)) return;
 
-                Thread.Sleep(100);
+                // Tunggu sampai file benar-benar selesai ditulis
+                Thread.Sleep(300);
 
-                var existing = _db.GetByPath(path);
-                if (existing != null) return;
+                if (_db.GetByPath(path) != null) return;
 
                 var song = _scanner.ReadMetadata(path);
                 _db.InsertSong(song);
 
                 RefreshUI();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("OnFileAdded: " + ex);
+            }
         }
 
-
-        // ================================
         // FILE REMOVED
-        // ================================
         public void OnFileRemoved(string path)
         {
             try
@@ -90,13 +96,13 @@ namespace MusicPlayerApp.Controllers
                 _db.DeleteByPath(path);
                 RefreshUI();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("OnFileRemoved: " + ex);
+            }
         }
 
-
-        // ================================
         // FILE RENAMED
-        // ================================
         public void OnFileRenamed(string oldPath, string newPath)
         {
             try
@@ -106,119 +112,109 @@ namespace MusicPlayerApp.Controllers
                 var song = _db.GetByPath(oldPath);
                 if (song == null) return;
 
-                song.FilePath = newPath;
+                Thread.Sleep(300);
 
                 var updated = _scanner.ReadMetadata(newPath);
+
+                song.FilePath = newPath;
                 song.Title = updated.Title;
                 song.Artist = updated.Artist;
                 song.Duration = updated.Duration;
 
                 _db.UpdateSong(song);
-
                 RefreshUI();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("OnFileRenamed: " + ex);
+            }
         }
 
-        // ================================
         // FILE CHANGED (METADATA UPDATE)
-        // ================================
         public void OnFileChanged(string path)
         {
             try
             {
-                if (!ShouldProcess(path)) return;
+                // Debounce lebih lama karena metadata editor memicu banyak event
+                if (!ShouldProcess(path, 800)) return;
                 if (!File.Exists(path)) return;
 
-                Thread.Sleep(80);
+                // Tunggu metadata benar-benar stabil
+                Thread.Sleep(500);
 
                 var song = _db.GetByPath(path);
                 if (song == null) return;
 
                 var updated = _scanner.ReadMetadata(path);
 
+                // Jika metadata tidak berubah, tidak perlu update DB
+                if (song.Title == updated.Title &&
+                    song.Artist == updated.Artist &&
+                    song.Duration == updated.Duration)
+                    return;
+
                 song.Title = updated.Title;
                 song.Artist = updated.Artist;
                 song.Duration = updated.Duration;
 
                 _db.UpdateSong(song);
-
                 RefreshUI();
-            }
-            catch { }
-        }
-
-        // ================================
-        // GET ALL SONGS
-        // ================================
-        public List<Song> GetAllSongs() => _db.GetAllSongs();
-
-        // ================================
-        // AUDIO CONTROL
-        // ================================
-        // Method PlaySong (Memutar lagu baru dari awal)
-        // 1. Play dari awal (Ganti Lagu)
-        public void PlaySong(Song song)
-        {
-            try
-            {
-                // Panggil method Play milik AudioPlayerService yang butuh string
-                _player.Play(song.FilePath);
-                IsPlaying = true;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine("Error Play: " + ex.Message);
+                System.Diagnostics.Debug.WriteLine("OnFileChanged: " + ex);
             }
         }
 
-        // 2. Pause Lagu
+        // GET ALL SONGS
+        public List<Song> GetAllSongs()
+        {
+            return _db.GetAllSongs();
+        }
+
+        // AUDIO CONTROL
+
+        // Memutar lagu baru dari awal
+        public void PlaySong(Song song)
+        {
+            _player.Play(song.FilePath);
+            IsPlaying = true;
+        }
+
+        // Pause lagu
         public void Pause()
         {
-            if (IsPlaying)
-            {
-                _player.Pause(); // Panggil method Pause di AudioPlayerService
-                IsPlaying = false;
-            }
+            if (!IsPlaying) return;
+
+            _player.Pause();
+            IsPlaying = false;
         }
 
-        // 3. Resume (Lanjut Main) -- BAGIAN INI YANG DIPERBAIKI
+        // Resume lagu
         public void Resume()
         {
-            if (!IsPlaying)
-            {
-                // JANGAN panggil _player.Play(); karena itu butuh parameter string
+            if (IsPlaying) return;
 
-                // TAPI panggil method Resume() yang sudah kamu buat di service
-                _player.Resume();
-
-                IsPlaying = true;
-            }
+            _player.Resume();
+            IsPlaying = true;
         }
 
-        // 4. Stop Total
+        // Stop total
         public void StopSong()
         {
             _player.Stop();
             IsPlaying = false;
         }
 
-        // =====================================================
-        //  REAL-TIME UI REFRESH (WAJIB DENGAN FileSystemWatcher)
-        // =====================================================
+        // REAL-TIME UI REFRESH
         private void RefreshUI()
         {
-            try
-            {
-                var mainWindow = App.MainUI;
+            var mainWindow = App.MainUI;
+            if (mainWindow == null) return;
 
-                if (mainWindow == null)
-                    return;
-
-                mainWindow.Dispatcher.InvokeAsync(() => mainWindow.ReloadSongList());
-            }
-            catch { }
+            mainWindow.Dispatcher.InvokeAsync(() =>
+                mainWindow.ReloadSongList()
+            );
         }
-
     }
 }
