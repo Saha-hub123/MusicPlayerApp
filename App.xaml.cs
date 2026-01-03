@@ -82,15 +82,18 @@ namespace MusicPlayerApp
         }
 
 
-        public void ChangeMusicFolder(string folderPath)
+        // Tambahkan 'async' di sini
+        public async void ChangeMusicFolder(string folderPath)
         {
             if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
                 return;
 
             CurrentMusicFolder = folderPath;
 
-            // Sinkronisasi awal folder TANPA reset database
-            Music.SyncInitialFolder(folderPath);
+            // --- PERBAIKAN DI SINI ---
+            // 1. Panggil method yang ada akhiran 'Async'
+            // 2. Gunakan 'await' agar kode menunggu scanning selesai sebelum lanjut (opsional tapi disarankan)
+            await Music.SyncInitialFolderAsync(folderPath);
 
             // Dispose watcher lama
             if (Watcher != null)

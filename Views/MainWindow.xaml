@@ -1,6 +1,7 @@
-﻿<Window x:Class="MusicPlayerApp.Views.MainWindow"
+﻿<Window
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:av="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="av" x:Class="MusicPlayerApp.Views.MainWindow"
         Title="Music Player"
         Height="750" Width="1200"
         Background="#1F2945"
@@ -8,34 +9,42 @@
 
     <Window.Resources>
 
-        <Style x:Key="SidebarButtonStyle" TargetType="Button">
-            <Setter Property="Foreground" Value="White"/>
+        <Style x:Key="SidebarButtonStyle" TargetType="{x:Type Button}">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Foreground" Value="#AEB7D3"/>
             <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Padding" Value="4"/>
-            <Setter Property="Margin" Value="0 3"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Height" Value="40"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}"
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter VerticalAlignment="Center"
-                                              Margin="10 0 0 0"/>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border Background="{TemplateBinding Background}" 
+                        CornerRadius="8" 
+                        Padding="15 0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="24"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter Grid.ColumnSpan="2" 
+                                          VerticalAlignment="Center" 
+                                          HorizontalAlignment="Left"/>
+                            </Grid>
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#2A3550"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="#2A3550"/>
-                </Trigger>
-            </Style.Triggers>
         </Style>
 
-        <Style x:Key="MusicListItemStyle" TargetType="ListViewItem">
+        <Style x:Key="MusicListItemStyle" TargetType="{x:Type ListViewItem}">
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="Padding" Value="10"/>
             <Setter Property="Margin" Value="0 4"/>
@@ -197,44 +206,119 @@
         </Grid.ColumnDefinitions>
 
         <Border Grid.Column="0" Background="#1B2338">
-            <StackPanel Margin="20">
-                <TextBlock Text="Musics"
-                           FontSize="22"
-                           Foreground="White"
-                           FontWeight="Bold"
-                           Margin="0 10"/>
+            <StackPanel Margin="20 30 20 20">
 
-                <TextBlock Text="Browse" Foreground="#6F7A95" FontSize="12" Margin="0 20 0 5"/>
+                <StackPanel Orientation="Horizontal" Margin="0 0 0 30">
+                    <Border Width="32" Height="32" CornerRadius="8" Background="#5CD1FF" Margin="0 0 10 0">
+                        <TextBlock Text="♫" Foreground="#1B2338" FontWeight="Bold" 
+                           FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <TextBlock Text="MyMusic" FontSize="22" Foreground="White" FontWeight="Bold" VerticalAlignment="Center"/>
+                </StackPanel>
 
-                <Button x:Name="BtnDiscover" Content="Discover" 
-                        Style="{StaticResource SidebarButtonStyle}" 
-                        Click="Filter_Click" Tag="Discover"/>
+                <TextBlock Text="MENU" Foreground="#6F7A95" FontSize="11" FontWeight="Bold" Margin="10 0 0 10"/>
 
-                <Button x:Name="BtnSongs" Content="Songs"    
-                        Style="{StaticResource SidebarButtonStyle}" 
-                        Click="Filter_Click" Tag="Songs"/>
+                <StackPanel Grid.Row="0" Margin="0 0 0 10">
+                    <Border Background="#2A3550" CornerRadius="20" Padding="15 8" Width="220" HorizontalAlignment="Left">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="🔍" Foreground="#AEB7D3" VerticalAlignment="Center" Margin="0 0 10 0"/>
+                            <TextBox x:Name="SearchBox" Grid.Column="1" Background="Transparent" BorderThickness="0" 
+                     Foreground="White" FontSize="14" CaretBrush="White" VerticalContentAlignment="Center"
+                     TextChanged="SearchBox_TextChanged" Tag="Search songs..."/>
+                        </Grid>
+                    </Border>
+                </StackPanel>
 
-                <Button x:Name="BtnAlbums" Content="Albums"   
-                        Style="{StaticResource SidebarButtonStyle}" 
-                        Click="Filter_Click" Tag="Albums"/>
+                <Button x:Name="BtnDiscover" Click="Filter_Click" Tag="Discover" Style="{StaticResource SidebarButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="🔥" Margin="0 0 15 0"/>
+                        <TextBlock Text="Discover"/>
+                    </StackPanel>
+                </Button>
 
-                <Button x:Name="BtnArtists" Content="Artist"   
-                        Style="{StaticResource SidebarButtonStyle}" 
-                        Click="Filter_Click" Tag="Artist"/>
+                <Button x:Name="BtnSongs" Click="Filter_Click" Tag="Songs" Style="{StaticResource SidebarButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="🎵" Margin="0 0 15 0"/>
+                        <TextBlock Text="Songs"/>
+                    </StackPanel>
+                </Button>
 
-                <Border Height="1"
-                    Margin="0 15"
-                    Background="#2A3550"/>
+                <Button x:Name="BtnAlbums" Click="Filter_Click" Tag="Albums" Style="{StaticResource SidebarButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="💿" Margin="0 0 15 0"/>
+                        <TextBlock Text="Albums"/>
+                    </StackPanel>
+                </Button>
 
-                <Button Content="Playlists"
-                    Style="{StaticResource SidebarButtonStyle}"
-                    Click="Playlists_Click"/>
+                <Button x:Name="BtnArtists" Click="Filter_Click" Tag="Artist" Style="{StaticResource SidebarButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="🎤" Margin="0 0 15 0"/>
+                        <TextBlock Text="Artists"/>
+                    </StackPanel>
+                </Button>
 
-                <Button Content="Import Lagu dari Folder"
-                    Width="200"
-                    Height="40"
-                    Margin="0 20 0 0"
-                    Click="ImportSongs_Click"/>
+                <Border Height="1" Background="#2A3550" Margin="0 20"/>
+
+                <TextBlock Text="YOUR LIBRARY" Foreground="#6F7A95" FontSize="11" FontWeight="Bold" Margin="10 0 0 10"/>
+
+                <Button Click="Playlists_Click" Style="{StaticResource SidebarButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="📜" Margin="0 0 15 0"/>
+                        <TextBlock Text="Playlists"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Click="DefaultLibrary_Click" Style="{StaticResource SidebarButtonStyle}" ToolTip="Default Windows Music Folder">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="📁" Margin="0 0 15 0"/>
+                        <TextBlock Text="Music (Default)"/>
+                    </StackPanel>
+                </Button>
+
+                <ItemsControl x:Name="FolderListControl">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Style="{StaticResource SidebarButtonStyle}" 
+                            Click="DynamicFolder_Click" 
+                            Tag="{Binding Path}" 
+                            ToolTip="{Binding Path}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="📂" Margin="0 0 15 0"/>
+                                    <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <Button Click="AddFolder_Click" Margin="0 10 0 0">
+                    <Button.Template>
+                        <ControlTemplate TargetType="{x:Type Button}">
+                            <Border Background="Transparent" BorderBrush="#2A3550" BorderThickness="1" 
+                            CornerRadius="8" Height="40" Cursor="Hand">
+                                <VisualStateManager.VisualStateGroups>
+                                    <VisualStateGroup x:Name="CommonStates">
+                                        <VisualState x:Name="Normal"/>
+                                        <VisualState x:Name="MouseOver">
+                                            <Storyboard>
+                                                <ColorAnimation Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)" To="#1F2940" Duration="0:0:0.2"/>
+                                            </Storyboard>
+                                        </VisualState>
+                                    </VisualStateGroup>
+                                </VisualStateManager.VisualStateGroups>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock Text="➕" Foreground="#5CD1FF" Margin="0 0 10 0"/>
+                                    <TextBlock Text="Add Folder" Foreground="#5CD1FF" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
             </StackPanel>
         </Border>
 
@@ -275,7 +359,7 @@
             Cursor="Hand" Margin="0 0 0 25"
             Click="CreatePlaylist_Click">
                     <Button.Resources>
-                        <Style TargetType="Border">
+                        <Style TargetType="{x:Type Border}">
                             <Setter Property="CornerRadius" Value="20"/>
                         </Style>
                     </Button.Resources>
@@ -400,7 +484,7 @@
             BorderThickness="0" FontWeight="Bold" FontSize="14"
             Cursor="Hand" Click="BtnPlayAll_Click">
                                     <Button.Resources>
-                                        <Style TargetType="Border">
+                                        <Style TargetType="{x:Type Border}">
                                             <Setter Property="CornerRadius" Value="22"/>
                                         </Style>
                                     </Button.Resources>
@@ -412,15 +496,15 @@
             BorderThickness="1" BorderBrush="#586380" FontWeight="SemiBold"
             Cursor="Hand" Click="BtnAddSongs_Click">
                                     <Button.Resources>
-                                        <Style TargetType="Border">
+                                        <Style TargetType="{x:Type Border}">
                                             <Setter Property="CornerRadius" Value="22"/>
                                         </Style>
                                     </Button.Resources>
                                     <Button.Style>
-                                        <Style TargetType="Button">
+                                        <Style TargetType="{x:Type Button}">
                                             <Setter Property="Template">
                                                 <Setter.Value>
-                                                    <ControlTemplate TargetType="Button">
+                                                    <ControlTemplate TargetType="{x:Type Button}">
                                                         <Border x:Name="Bd" 
                                     Background="{TemplateBinding Background}" 
                                     BorderBrush="{TemplateBinding BorderBrush}" 
@@ -446,7 +530,7 @@
             Foreground="White"
             BorderThickness="0" Padding="15 0" Height="40">
                                     <Button.Template>
-                                        <ControlTemplate TargetType="Button">
+                                        <ControlTemplate TargetType="{x:Type Button}">
                                             <Border x:Name="Bd" Background="#1B2338" CornerRadius="20">
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="15 0">
                                                     <Path Data="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" 
@@ -470,7 +554,7 @@
             Foreground="White"
             BorderThickness="0" Padding="15 0" Height="40">
                                     <Button.Template>
-                                        <ControlTemplate TargetType="Button">
+                                        <ControlTemplate TargetType="{x:Type Button}">
                                             <Border x:Name="Bd" Background="#2F1818" CornerRadius="20" BorderBrush="#FF5C5C" BorderThickness="1">
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="15 0">
                                                     <Path Data="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" 
@@ -542,37 +626,24 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <StackPanel Grid.Row="0" Margin="0 0 0 10">
-                    <TextBlock Text="Search Music" FontSize="24" Foreground="White" FontWeight="Bold" Margin="0 0 0 15"/>
-                    <Border Background="#2A3550" CornerRadius="20" Padding="15 8" Width="400" HorizontalAlignment="Left">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="🔍" Foreground="#AEB7D3" VerticalAlignment="Center" Margin="0 0 10 0"/>
-                            <TextBox x:Name="SearchBox" Grid.Column="1" Background="Transparent" BorderThickness="0" 
-                                     Foreground="White" FontSize="14" CaretBrush="White" VerticalContentAlignment="Center"
-                                     TextChanged="SearchBox_TextChanged" Tag="Search songs..."/>
-                        </Grid>
-                    </Border>
-                </StackPanel>
-
                 <TextBlock Grid.Row="1" Text="Music" FontSize="20" Foreground="White" Margin="0 10 0 10"/>
 
                 <ListView Grid.Row="2"
                           x:Name="NewPlayedList"
                           Background="Transparent"
                           BorderThickness="0"
-                          ItemContainerStyle="{StaticResource MusicListItemStyle}"
                           MouseDoubleClick="NewPlayedList_MouseDoubleClick"
                           ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                           ScrollViewer.VerticalScrollBarVisibility="Auto"
-                          Margin="0 0 0 10">
+                          Margin="0 0 0 10" av:ItemsSource="{av:SampleData ItemCount=5}">
 
                     <ListView.Resources>
-                        <Style TargetType="ScrollBar" BasedOn="{StaticResource ModernScrollBarStyle}"/>
+                        <Style TargetType="{x:Type ScrollBar}" BasedOn="{StaticResource ModernScrollBarStyle}"/>
                     </ListView.Resources>
+
+                    <ListView.ItemContainerStyle>
+                        <StaticResource ResourceKey="MusicListItemStyle"/>
+                    </ListView.ItemContainerStyle>
 
                     <ListView.GroupStyle>
                         <GroupStyle>
@@ -647,13 +718,10 @@
                         MouseMove="ProgressSlider_MouseMove"/>
 
                 <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Margin="20 0" VerticalAlignment="Center">
-                    <Ellipse x:Name="AlbumArtContainer" Width="45" Height="45">
+                    <Ellipse x:Name="AlbumArtContainer" Width="45" Height="45" Fill="#2A3550">
                         <Ellipse.Effect>
                             <DropShadowEffect BlurRadius="10" Color="Black" Opacity="0.4" ShadowDepth="2"/>
                         </Ellipse.Effect>
-                        <Ellipse.Fill>
-                            <SolidColorBrush Color="#2A3550"/>
-                        </Ellipse.Fill>
                     </Ellipse>
 
                     <StackPanel Margin="12 0" VerticalAlignment="Center">

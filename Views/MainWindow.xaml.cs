@@ -18,6 +18,13 @@ using WpfApp = System.Windows.Application;
 
 namespace MusicPlayerApp.Views
 {
+    // Taruh class ini di luar class MainWindow, tapi masih di dalam namespace MusicPlayerApp.Views
+    public class LibraryFolder
+    {
+        public string Name { get; set; }
+        public string Path { get; set; }
+    }
+
     public partial class MainWindow : Window
     {
         private Song _currentSong;
@@ -29,7 +36,10 @@ namespace MusicPlayerApp.Views
         private ObservableCollection<Song> _allSongs = new ObservableCollection<Song>();
         private int _currentPlaylistId = -1;
         private bool _isPlaylistView = false;
+        // Tambahkan Collection untuk Sidebar
+        private ObservableCollection<LibraryFolder> _sidebarFolders = new ObservableCollection<LibraryFolder>();
 
+        // Di dalam Constructor MainWindow()
         public MainWindow()
         {
             InitializeComponent();
@@ -38,6 +48,11 @@ namespace MusicPlayerApp.Views
             _timer.Interval = TimeSpan.FromMilliseconds(500);
             _timer.Tick += UpdateProgress;
 
+            // Binding List Folder ke XAML
+            FolderListControl.ItemsSource = _sidebarFolders;
+
+            // Load folder yang tersimpan sebelumnya
+            LoadSavedFolders();
         }
 
         private void ImportSongs_Click(object sender, RoutedEventArgs e)
@@ -447,17 +462,23 @@ namespace MusicPlayerApp.Views
             _isPlaylistView = false;
             _currentPlaylistId = -1;
 
-            // Kembali ke ALL SONGS
-            NewPlayedList.ItemsSource = null;
-            NewPlayedList.ItemsSource = _allSongs;
+            // --- PERBAIKAN DI SINI ---
+            // Saat klik menu Browse, kita ingin melihat SEMUA lagu dari semua folder
+            App.CurrentMusicFolder = null;
 
-            // Pastikan layout benar
-            PlaylistDetailView.Visibility = Visibility.Collapsed;
+            // Refresh list agar mengambil semua data dari DB lagi
+            LoadSongs();
+            // -------------------------
+
+            // Pastikan layout benar
+            PlaylistDetailView.Visibility = Visibility.Collapsed;
             PlaylistIndexView.Visibility = Visibility.Collapsed;
             MainContentView.Visibility = Visibility.Visible;
 
             Button clickedButton = sender as Button;
             if (clickedButton == null) return;
+
+            // ... (Sisa kode logika sorting switch case biarkan sama) ...
 
             string filterType = clickedButton.Tag?.ToString();
             if (string.IsNullOrEmpty(filterType)) return;
@@ -514,9 +535,9 @@ namespace MusicPlayerApp.Views
         // Fungsi helper untuk mereset tampilan tombol
         private void ResetSidebarButtons()
         {
-            // Kembalikan warna ke abu-abu (sesuai tema kamu)
-            var defaultColor = (Brush)new BrushConverter().ConvertFrom("#6F7A95");
+            var defaultColor = (Brush)new BrushConverter().ConvertFrom("#6F7A95");
 
+            // Menu Utama
             BtnDiscover.Foreground = defaultColor;
             BtnDiscover.FontWeight = FontWeights.Normal;
 
@@ -528,6 +549,11 @@ namespace MusicPlayerApp.Views
 
             BtnArtists.Foreground = defaultColor;
             BtnArtists.FontWeight = FontWeights.Normal;
+
+            // Catatan: Tombol "Default Library" dan "Add Folder" di XAML Anda 
+            // belum memiliki x:Name. Jika Anda ingin mereset warnanya juga secara manual, 
+            // Anda perlu memberi x:Name di MainWindow.xaml, misal: x:Name="BtnDefaultLib".
+            // Jika tidak, logika di atas sudah cukup untuk Menu Navigasi.
         }
 
         private void NewPlayedList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -774,6 +800,140 @@ namespace MusicPlayerApp.Views
                     MessageBox.Show("Semua lagu yang dipilih sudah ada di playlist ini.");
                 }
             }
+        }
+
+        // -------------------------------------------------------------
+        // LOGIKA DEFAULT LIBRARY (PERBAIKAN)
+        // -------------------------------------------------------------
+        // Update fungsi DefaultLibrary_Click juga biar aman
+        private async void DefaultLibrary_Click(object sender, RoutedEventArgs e)
+        {
+            ResetSidebarButtons();
+            ShowMainContent();
+
+            // Highlight tombol
+            if (sender is Button btn)
+            {
+                btn.Foreground = Brushes.White;
+                btn.FontWeight = FontWeights.Bold;
+            }
+
+            string defaultPath = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic);
+            App.CurrentMusicFolder = defaultPath;
+
+            // Tunggu sync selesai
+            await App.Music.SyncInitialFolderAsync(defaultPath);
+
+            LoadSongs();
+        }
+
+        // -------------------------------------------------------------
+        // LOGIKA ADD FOLDER (DINAMIS & SIMPAN)
+        // -------------------------------------------------------------
+        // Update fungsi AddFolder_Click
+        private void AddFolder_Click(object sender, RoutedEventArgs e)
+        {
+            using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                dialog.Description = "Pilih folder untuk ditambahkan ke Library";
+                dialog.UseDescriptionForTitle = true;
+
+                if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    string selectedPath = dialog.SelectedPath;
+                    string folderName = new DirectoryInfo(selectedPath).Name;
+
+                    if (_sidebarFolders.Any(f => f.Path == selectedPath))
+                    {
+                        MessageBox.Show("Folder ini sudah ada di sidebar.");
+                        return;
+                    }
+
+                    var newFolder = new LibraryFolder { Name = folderName, Path = selectedPath };
+                    _sidebarFolders.Add(newFolder);
+
+                    SaveFoldersToConfig();
+
+                    // Panggil fungsi OpenFolder yang sudah diperbaiki
+                    OpenFolder(selectedPath);
+                }
+            }
+        }
+
+        // Update fungsi DynamicFolder_Click
+        private void DynamicFolder_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is string path)
+            {
+                OpenFolder(path);
+            }
+        }
+
+        // Fungsi Helper untuk membuka folder spesifik
+        // Update fungsi OpenFolder menjadi Async
+        private async void OpenFolder(string path)
+        {
+            // Tampilkan loading visual jika ada (opsional)
+            // Mouse.OverrideCursor = Cursors.Wait;
+
+            ResetSidebarButtons();
+            ShowMainContent();
+
+            App.CurrentMusicFolder = path;
+
+            // PENTING: Pakai 'await' agar kode di bawahnya MENUNGGU scan selesai
+            await App.Music.SyncInitialFolderAsync(path);
+
+            // Sekarang database sudah terisi, baru kita load
+            LoadSongs();
+
+            // Kembalikan kursor
+            // Mouse.OverrideCursor = null;
+        }
+
+        // -------------------------------------------------------------
+        // PERSISTENCE (SIMPAN DAFTAR FOLDER KE FILE)
+        // -------------------------------------------------------------
+        private void SaveFoldersToConfig()
+        {
+            try
+            {
+                // Simpan list path folder tambahan ke file teks sederhana
+                string configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MusicPlayerApp", "folders.cfg");
+
+                // Ambil semua path dari sidebar
+                var lines = _sidebarFolders.Select(f => f.Path).ToList();
+                File.WriteAllLines(configPath, lines);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Gagal menyimpan config folder: " + ex.Message);
+            }
+        }
+
+        private void LoadSavedFolders()
+        {
+            try
+            {
+                string configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MusicPlayerApp", "folders.cfg");
+
+                if (File.Exists(configPath))
+                {
+                    var lines = File.ReadAllLines(configPath);
+                    foreach (var path in lines)
+                    {
+                        if (Directory.Exists(path))
+                        {
+                            _sidebarFolders.Add(new LibraryFolder
+                            {
+                                Name = new DirectoryInfo(path).Name,
+                                Path = path
+                            });
+                        }
+                    }
+                }
+            }
+            catch { }
         }
     }
 }

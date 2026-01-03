@@ -11,6 +11,15 @@ namespace MusicPlayerApp.Models
         public string Signature { get; set; }
         public string Title { get; set; }
         public string FilePath { get; set; }
+
+        // --- RELASI DATA (Tambahan Baru) ---
+        [Indexed]
+        public int ArtistId { get; set; } // Link ke tabel Artist
+
+        [Indexed]
+        public int AlbumId { get; set; }  // Link ke tabel Album
+        // -----------------------------------
+
         public string Artist { get; set; }
         public double Duration { get; set; }
         public string DurationFormatted

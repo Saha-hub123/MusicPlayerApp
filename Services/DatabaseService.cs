@@ -18,24 +18,119 @@ namespace MusicPlayerApp.Services
 
             _db = new SQLiteConnection(path);
 
-            if (firstTimeCreate)
-            {
-                _db.CreateTable<Song>();
-                _db.CreateTable<Playlist>();
-                _db.CreateTable<PlaylistSong>();
-            }
-        }
-
-        // RESET DATABASE (dipakai saat user ganti folder)
-        public void Reset()
-        {
-            _db.DropTable<PlaylistSong>();
-            _db.DropTable<Playlist>();
-            _db.DropTable<Song>();
-
+            // CreateTable sifatnya "Idempotent" (Hanya membuat jika tabel belum ada)
+            // Jadi aman dipanggil setiap kali aplikasi start
+            _db.CreateTable<Artist>();
+            _db.CreateTable<Album>();
             _db.CreateTable<Song>();
             _db.CreateTable<Playlist>();
             _db.CreateTable<PlaylistSong>();
+        }
+
+        // =======================================================================
+        // 1. SYSTEM & MAINTENANCE
+        // =======================================================================
+
+        /// <summary>
+        /// PENTING: Method ini hanya dipanggil jika User menekan tombol "Factory Reset".
+        /// JANGAN panggil ini saat Import lagu biasa.
+        /// </summary>
+        public void ResetDatabase()
+        {
+            // Hapus tabel detail (anak) dulu agar tidak error constraint
+            _db.DropTable<PlaylistSong>();
+            _db.DropTable<Song>();
+            _db.DropTable<Album>();
+            _db.DropTable<Artist>(); // Hapus tabel master (induk) terakhir
+            _db.DropTable<Playlist>();
+
+            // Buat ulang tabel kosong
+            _db.CreateTable<Artist>();
+            _db.CreateTable<Album>();
+            _db.CreateTable<Song>();
+            _db.CreateTable<Playlist>();
+            _db.CreateTable<PlaylistSong>();
+        }
+
+        /// <summary>
+        /// Membungkus banyak operasi database dalam satu transaksi.
+        /// WAJIB DIPAKAI saat import ribuan lagu agar prosesnya hitungan detik, bukan menit.
+        /// </summary>
+        public void RunInTransaction(Action action)
+        {
+            _db.RunInTransaction(action);
+        }
+
+        // =======================================================================
+        // 2. ARTIST (MASTER)
+        // =======================================================================
+
+        public List<Artist> GetAllArtists()
+        {
+            return _db.Table<Artist>().OrderBy(a => a.Name).ToList();
+        }
+
+        /// <summary>
+        /// Logika Cerdas: Cek apakah Artis sudah ada?
+        /// Jika YA -> Kembalikan ID-nya.
+        /// Jika TIDAK -> Buat baru, lalu kembalikan ID barunya.
+        /// </summary>
+        public int GetOrCreateArtistId(string artistName)
+        {
+            // Normalisasi nama (hapus spasi berlebih, handle null)
+            var nameToSearch = string.IsNullOrWhiteSpace(artistName) ? "Unknown Artist" : artistName.Trim();
+
+            var existing = _db.Table<Artist>().FirstOrDefault(a => a.Name == nameToSearch);
+            if (existing != null)
+            {
+                return existing.Id;
+            }
+
+            var newArtist = new Artist { Name = nameToSearch };
+            _db.Insert(newArtist);
+            return newArtist.Id;
+        }
+
+        // =======================================================================
+        // 3. ALBUM (MASTER)
+        // =======================================================================
+
+        public List<Album> GetAlbumsByArtist(int artistId)
+        {
+            return _db.Table<Album>().Where(a => a.ArtistId == artistId).ToList();
+        }
+
+        /// <summary>
+        /// Logika Cerdas: Cek Album berdasarkan Judul DAN Artis.
+        /// (Album "Greatest Hits" milik Queen beda dengan "Greatest Hits" milik Bon Jovi)
+        /// </summary>
+        public int GetOrCreateAlbumId(string albumTitle, int artistId, string coverPath = null)
+        {
+            var titleToSearch = string.IsNullOrWhiteSpace(albumTitle) ? "Unknown Album" : albumTitle.Trim();
+
+            var existing = _db.Table<Album>()
+                              .FirstOrDefault(a => a.Title == titleToSearch && a.ArtistId == artistId);
+
+            if (existing != null)
+            {
+                // Opsional: Update cover path jika sebelumnya kosong tapi sekarang ada
+                if (string.IsNullOrEmpty(existing.CoverPath) && !string.IsNullOrEmpty(coverPath))
+                {
+                    existing.CoverPath = coverPath;
+                    _db.Update(existing);
+                }
+                return existing.Id;
+            }
+
+            var newAlbum = new Album
+            {
+                Title = titleToSearch,
+                ArtistId = artistId,
+                CoverPath = coverPath,
+                Year = 0 // Bisa diupdate nanti
+            };
+            _db.Insert(newAlbum);
+            return newAlbum.Id;
         }
 
         // =====================
@@ -53,6 +148,24 @@ namespace MusicPlayerApp.Services
         public Song? GetByPath(string path)
         {
             return _db.Table<Song>().FirstOrDefault(s => s.FilePath == path);
+        }
+
+        // Mengambil Lagu berdasarkan Album (Untuk fitur Browse Album)
+        public List<Song> GetSongsByAlbumId(int albumId)
+        {
+            return _db.Table<Song>()
+                      .Where(s => s.AlbumId == albumId)
+                      .OrderBy(s => s.Title) // Idealnya order by TrackNumber
+                      .ToList();
+        }
+
+        // Mengambil Lagu berdasarkan Artis (Untuk fitur Browse Artist)
+        public List<Song> GetSongsByArtistId(int artistId)
+        {
+            return _db.Table<Song>()
+                      .Where(s => s.ArtistId == artistId)
+                      .OrderBy(s => s.Title)
+                      .ToList();
         }
 
         public void DeleteBySignature(string signature)
