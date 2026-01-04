@@ -1,4 +1,5 @@
 ﻿using SQLite;
+using System; // Pastikan using System ada untuk DateTime
 
 namespace MusicPlayerApp.Models
 {
@@ -12,16 +13,18 @@ namespace MusicPlayerApp.Models
         public string Title { get; set; }
         public string FilePath { get; set; }
 
-        // --- RELASI DATA (Tambahan Baru) ---
         [Indexed]
-        public int ArtistId { get; set; } // Link ke tabel Artist
+        public int ArtistId { get; set; }
 
         [Indexed]
-        public int AlbumId { get; set; }  // Link ke tabel Album
-        // -----------------------------------
+        public int AlbumId { get; set; }
 
         public string Artist { get; set; }
         public double Duration { get; set; }
+
+        [Indexed]
+        public bool IsLiked { get; set; } = false;
+
         public string DurationFormatted
         {
             get
@@ -30,9 +33,9 @@ namespace MusicPlayerApp.Models
                 return ts.ToString(@"mm\:ss");
             }
         }
-        // Tambahan untuk fitur baru
+
         public string Album { get; set; }
-        public DateTime DateAdded { get; set; } // Untuk fitur "Discover" (Terbaru)
+        public DateTime DateAdded { get; set; }
 
         public string FirstLetter
         {

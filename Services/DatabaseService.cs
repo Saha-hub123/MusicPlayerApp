@@ -1,6 +1,8 @@
 ﻿using MusicPlayerApp.Models;
 using SQLite;
 using System.Collections.Generic;
+using System.Data.Common;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 
@@ -275,6 +277,24 @@ namespace MusicPlayerApp.Services
                 select s;
 
             return query.ToList();
+        }
+
+        //Liked Songs
+        public void ToggleLike(int songId, bool isLiked)
+        {
+            // GANTI '_conn' dengan '_connection' (atau sesuaikan dengan nama variabel di atas)
+            var song = _db.Find<Song>(songId);
+            if (song != null)
+            {
+                song.IsLiked = isLiked;
+                _db.Update(song);
+            }
+        }
+
+        public List<Song> GetLikedSongs()
+        {
+            // GANTI '_conn' dengan '_connection'
+            return _db.Table<Song>().Where(s => s.IsLiked == true).ToList();
         }
     }
 }

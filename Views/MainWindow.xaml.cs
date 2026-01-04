@@ -172,6 +172,7 @@ namespace MusicPlayerApp.Views
                 else if (BtnSongs.FontWeight == FontWeights.Bold) Filter_Click(BtnSongs, null);
                 else if (BtnAlbums.FontWeight == FontWeights.Bold) Filter_Click(BtnAlbums, null);
                 else if (BtnArtists.FontWeight == FontWeights.Bold) Filter_Click(BtnArtists, null);
+                else if (BtnArtists.FontWeight == FontWeights.Bold) Filter_Click(BtnLiked, null);
             });
         }
 
@@ -438,15 +439,11 @@ namespace MusicPlayerApp.Views
             _isPlaylistView = false;
             _currentPlaylistId = -1;
 
-            // --- PERBAIKAN DI SINI ---
-            // Saat klik menu Browse, kita ingin melihat SEMUA lagu dari semua folder
+            // 1. Reset Konteks Folder & Load Data Utama
             App.CurrentMusicFolder = null;
+            LoadSongs(); // Ini mengisi variabel _allSongs di memori
 
-            // Refresh list agar mengambil semua data dari DB lagi
-            LoadSongs();
-            // -------------------------
-
-            // Pastikan layout benar
+            // 2. Reset Layout Tampilan
             PlaylistDetailView.Visibility = Visibility.Collapsed;
             PlaylistIndexView.Visibility = Visibility.Collapsed;
             MainContentView.Visibility = Visibility.Visible;
@@ -454,25 +451,24 @@ namespace MusicPlayerApp.Views
             Button clickedButton = sender as Button;
             if (clickedButton == null) return;
 
-            // ... (Sisa kode logika sorting switch case biarkan sama) ...
-
             string filterType = clickedButton.Tag?.ToString();
             if (string.IsNullOrEmpty(filterType)) return;
 
+            // 3. Reset Tampilan Tombol Sidebar
             ResetSidebarButtons();
+            // Tambahan: Pastikan tombol Liked juga di-reset warnanya
+            BtnLiked.Foreground = (Brush)new BrushConverter().ConvertFrom("#6F7A95");
+            BtnLiked.FontWeight = FontWeights.Normal;
 
-            // Reset Search
-            App.CurrentMusicFolder = null;
-
-            // Highlight tombol yang diklik
+            // 4. Highlight tombol yang diklik
             clickedButton.Foreground = Brushes.White;
             clickedButton.FontWeight = FontWeights.Bold;
 
-            // Reset Visibility Semua View
+            // 5. Reset Visibility Panel
             NewPlayedList.Visibility = Visibility.Collapsed;
             CardGridView.Visibility = Visibility.Collapsed;
             DetailView.Visibility = Visibility.Collapsed;
-            BtnBack.Visibility = Visibility.Collapsed; // Sembunyikan tombol back di menu utama
+            BtnBack.Visibility = Visibility.Collapsed;
 
             switch (filterType)
             {
@@ -480,21 +476,30 @@ namespace MusicPlayerApp.Views
                     _currentViewMode = "Songs";
                     PageTitle.Text = "All Songs";
                     NewPlayedList.Visibility = Visibility.Visible;
-                    LoadSongs(); // Load list lagu biasa
+
+                    // --- PERBAIKAN PENTING DI SINI ---
+                    // Kembalikan sumber data list ke _allSongs
+                    NewPlayedList.ItemsSource = _allSongs;
+                    // ---------------------------------
                     break;
+
                 case "Discover":
                     _currentViewMode = "Songs";
-                    PageTitle.Text = "Discover"; // Pastikan TextBlock PageTitle ada di XAML
-
+                    PageTitle.Text = "Discover";
                     NewPlayedList.Visibility = Visibility.Visible;
-                    LoadSongs(); // Load list lagu biasa
 
-                    // Sorting untuk Discover/Songs (opsional, dari kode lamamu)
+                    // --- PERBAIKAN PENTING DI SINI ---
+                    // Kembalikan sumber data list ke _allSongs SEBELUM melakukan sorting
+                    NewPlayedList.ItemsSource = _allSongs;
+                    // ---------------------------------
+
+                    // Sorting Logic
                     ICollectionView view = CollectionViewSource.GetDefaultView(NewPlayedList.ItemsSource);
                     if (view != null)
                     {
                         view.SortDescriptions.Clear();
                         view.GroupDescriptions.Clear();
+
                         if (filterType == "Discover")
                             view.SortDescriptions.Add(new SortDescription("DateAdded", ListSortDirection.Descending));
                         else
@@ -506,14 +511,26 @@ namespace MusicPlayerApp.Views
                     _currentViewMode = "Albums";
                     PageTitle.Text = "Albums";
                     CardGridView.Visibility = Visibility.Visible;
-                    LoadAlbumsToGrid(); // <--- FUNGSI BARU
+                    LoadAlbumsToGrid();
                     break;
 
                 case "Artist":
                     _currentViewMode = "Artists";
                     PageTitle.Text = "Artists";
                     CardGridView.Visibility = Visibility.Visible;
-                    LoadArtistsToGrid(); // <--- FUNGSI BARU
+                    LoadArtistsToGrid();
+                    break;
+
+                case "Liked":
+                    _currentViewMode = "Liked";
+                    PageTitle.Text = "Liked Songs";
+                    NewPlayedList.Visibility = Visibility.Visible;
+
+                    // Ambil data Liked Songs
+                    var likedSongs = App.Db.GetLikedSongs();
+
+                    // Di sini kita MEMUTUS hubungan dari _allSongs dan ganti ke likedSongs
+                    NewPlayedList.ItemsSource = likedSongs;
                     break;
             }
         }
@@ -732,14 +749,17 @@ namespace MusicPlayerApp.Views
             }
         }
 
+        // Di MainWindow.xaml.cs
+
         private void BtnAddSongs_Click(object sender, RoutedEventArgs e)
         {
             if (_currentPlaylistId == -1) return;
 
+            var globalList = App.Music.GetAllSongs();
+
             // 1. Siapkan dialog selector
-            // Kita kirim _allSongs (konversi ke List biasa) agar dialog punya datanya
-            var dialog = new SongSelectorDialog(_allSongs.ToList());
-            dialog.Owner = this; // Agar dialog muncul di tengah window utama
+            var dialog = new SongSelectorDialog(globalList);
+            dialog.Owner = this;
 
             // 2. Tampilkan dialog
             if (dialog.ShowDialog() == true)
@@ -751,8 +771,6 @@ namespace MusicPlayerApp.Views
                 // 3. Masukkan lagu yang dipilih user ke Playlist
                 foreach (var song in selectedSongs)
                 {
-                    // Cek apakah sudah ada di playlist ini? (Opsional, controller mungkin sudah handle)
-                    // Tapi kita cek lagi di sini untuk hitungan statistik
                     var existingInPlaylist = App.Playlists.GetSongsInPlaylist(_currentPlaylistId)
                                                           .Any(s => s.Id == song.Id);
 
@@ -1314,6 +1332,81 @@ namespace MusicPlayerApp.Views
             }
             while (current != null);
             return null;
+        }
+
+        // 1. Saat tombol titik tiga diklik
+        private void SongMenu_Click(object sender, RoutedEventArgs e)
+        {
+            var button = sender as Button;
+            if (button == null) return;
+
+            var song = button.DataContext as Song;
+            if (song == null) return;
+
+            if (button.ContextMenu != null)
+            {
+                button.ContextMenu.DataContext = song; // Kirim data lagu ke menu
+
+                // Ubah teks menu Like/Unlike dinamis
+                var likeItem = button.ContextMenu.Items[0] as MenuItem;
+                if (likeItem != null)
+                {
+                    likeItem.Header = song.IsLiked ? "Remove from Liked Songs" : "Save to Liked Songs";
+                }
+
+                button.ContextMenu.IsOpen = true;
+            }
+        }
+
+        // 2. Klik Toggle Like
+        private void Context_ToggleLike_Click(object sender, RoutedEventArgs e)
+        {
+            var menuItem = sender as MenuItem;
+            var song = menuItem?.DataContext as Song;
+
+            if (song != null)
+            {
+                song.IsLiked = !song.IsLiked;
+                App.Db.ToggleLike(song.Id, song.IsLiked);
+
+                // Refresh halaman jika sedang di tab Liked Songs
+                if (_currentViewMode == "Liked")
+                {
+                    // Reload manual
+                    var likedSongs = App.Db.GetLikedSongs();
+                    NewPlayedList.ItemsSource = likedSongs;
+                }
+            }
+        }
+
+        // 3. Klik Add to Playlist
+        private void Context_AddToPlaylist_Click(object sender, RoutedEventArgs e)
+        {
+            var menuItem = sender as MenuItem;
+            var song = menuItem?.DataContext as Song;
+
+            if (song != null)
+            {
+                // Buka Dialog AddToPlaylist yang sudah kita buat sebelumnya
+                var dialog = new AddToPlaylistDialog { Owner = this };
+
+                if (dialog.ShowDialog() == true && dialog.SelectedPlaylist != null)
+                {
+                    var pl = dialog.SelectedPlaylist;
+                    // Cek duplikasi
+                    var existing = App.Playlists.GetSongsInPlaylist(pl.Id).Any(s => s.Id == song.Id);
+
+                    if (!existing)
+                    {
+                        App.Playlists.AddSongToPlaylist(pl.Id, song);
+                        MessageBox.Show($"Saved to playlist '{pl.Name}'");
+                    }
+                    else
+                    {
+                        MessageBox.Show("Lagu sudah ada di playlist ini.");
+                    }
+                }
+            }
         }
     }
 }
