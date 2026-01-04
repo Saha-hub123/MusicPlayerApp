@@ -7,7 +7,7 @@ using System.IO;                  // Untuk MemoryStream
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Forms;
+using WinForms = System.Windows.Forms; // Gunakan Alias agar tidak bentrok
 using System.Windows.Input;
 using System.Windows.Media;       // Untuk ImageBrush & Colors
 using System.Windows.Media.Imaging; // Untuk BitmapImage
@@ -53,6 +53,11 @@ namespace MusicPlayerApp.Views
                                                    // 1. Tambahkan Variable Global di dalam Class MainWindow
         private Button _activeLibraryButton; // Untuk menyimpan tombol folder yang sedang aktif
 
+        // Variabel untuk menyimpan item yang sedang di-drag
+        private Models.Song _draggedItem;
+        // Variable global untuk Drag Drop (Pastikan ini ada di dalam class MainWindow)
+        private Point _dragStartPoint;
+
         // Di dalam Constructor MainWindow()
         public MainWindow()
         {
@@ -62,16 +67,18 @@ namespace MusicPlayerApp.Views
             _timer.Interval = TimeSpan.FromMilliseconds(500);
             _timer.Tick += UpdateProgress;
 
-            // Binding List Folder ke XAML
-            FolderListControl.ItemsSource = _sidebarFolders;
+            // --- TAMBAHAN BARU ---
+            // Dengarkan event dari Controller
+            App.Music.CurrentSongChanged += OnSongChanged;
+            // ---------------------
 
-            // Load folder yang tersimpan sebelumnya
+            FolderListControl.ItemsSource = _sidebarFolders;
             LoadSavedFolders();
         }
 
         private void ImportSongs_Click(object sender, RoutedEventArgs e)
         {
-            using (var dialog = new FolderBrowserDialog())
+            using (var dialog = new WinForms.FolderBrowserDialog()) // Tambahkan WinForms.
             {
                 dialog.Description = "Pilih folder musik";
 
@@ -175,25 +182,19 @@ namespace MusicPlayerApp.Views
             PlaylistDetailView.Visibility = Visibility.Collapsed;
         }
 
-        private void NewPlayedList_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        private void NewPlayedList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            if (NewPlayedList.SelectedItem is Song song)
+            if (NewPlayedList.SelectedItem is Song selectedSong)
             {
-                _currentSong = song;
-                App.Music.PlaySong(song);
-                _timer.Start();
+                // 1. Ambil List Sesuai Urutan Tampilan (Visual Order)
+                // Kita pakai .Items (Bukan .ItemsSource) karena .Items mengikuti Sorting/Filtering user
+                var visibleQueue = NewPlayedList.Items.Cast<Song>().ToList();
 
-                // Update Teks (Kode lama kamu)
-                CurrentSongTitle.Text = song.Title;
-                CurrentSongArtist.Text = song.Artist;
+                // 2. Kirim ke Queue Controller
+                App.Music.PlayQueue(visibleQueue, selectedSong);
 
-                // --- TAMBAHAN BARU ---
-                // Panggil fungsi untuk update gambar di Ellipse
-                // Pastikan object 'song' punya properti 'FilePath'
-                UpdateAlbumArt(song.FilePath);
-                // --- TAMBAHAN BARU ---
-                // Karena lagu baru mulai, paksa ikon jadi PAUSE
-                UpdatePlayState(true);
+                // Catatan: _timer.Start() dan UpdateSongDisplay tidak perlu dipanggil disini lagi
+                // karena sudah ditangani otomatis oleh event OnSongChanged!
             }
         }
 
@@ -275,70 +276,14 @@ namespace MusicPlayerApp.Views
 
         private void Next_Click(object sender, RoutedEventArgs e)
         {
-            List<Song> currentList;
-
-            if (_isPlaylistView && _currentPlaylistId != -1)
-            {
-                currentList = App.Playlists.GetSongsInPlaylist(_currentPlaylistId);
-            }
-            else
-            {
-                currentList = NewPlayedList.ItemsSource is IEnumerable<Song> list
-                  ? list.ToList()
-                  : _allSongs.ToList();
-            }
-
-            if (_currentSong == null || currentList.Count == 0) return;
-
-            // Cari index lagu sekarang di dalam list yang aktif
-            int index = currentList.FindIndex(s => s.FilePath == _currentSong.FilePath);
-            if (index == -1) index = 0;
-
-            // Hitung Next Index (Wrap around)
-            int newIndex = (index + 1) % currentList.Count;
-
-            // Ambil lagu baru
-            _currentSong = currentList[newIndex];
-
-            // Mainkan
-            App.Music.PlaySong(_currentSong);
-            _timer.Start();
-
-            // Update SEMUA tampilan (Gambar, Teks, Ikon) lewat fungsi helper
-            UpdateSongDisplay(_currentSong);
+            // Serahkan logika ke Controller
+            App.Music.PlayNext();
         }
 
         private void Prev_Click(object sender, RoutedEventArgs e)
         {
-            List<Song> currentList;
-
-            if (_isPlaylistView && _currentPlaylistId != -1)
-            {
-                currentList = App.Playlists.GetSongsInPlaylist(_currentPlaylistId);
-            }
-            else
-            {
-                currentList = NewPlayedList.ItemsSource is IEnumerable<Song> list
-          ? list.ToList()
-          : _allSongs.ToList();
-            }
-
-            if (_currentSong == null || currentList.Count == 0) return;
-
-            int index = currentList.FindIndex(s => s.FilePath == _currentSong.FilePath);
-            if (index == -1) index = 0;
-
-            // Hitung Prev Index (Wrap around logic yang benar)
-            // Ditambah currentList.Count agar tidak bernilai negatif
-            int newIndex = (index - 1 + currentList.Count) % currentList.Count;
-
-            _currentSong = currentList[newIndex];
-
-            App.Music.PlaySong(_currentSong);
-            _timer.Start();
-
-            // Update SEMUA tampilan
-            UpdateSongDisplay(_currentSong);
+            // Serahkan logika ke Controller
+            App.Music.PlayPrevious();
         }
 
         private void UpdateProgress(object sender, EventArgs e)
@@ -456,24 +401,36 @@ namespace MusicPlayerApp.Views
 
         private void UpdateSongDisplay(Song song)
         {
-            // 1. Update Teks
-            CurrentSongTitle.Text = song.Title;
+            // 1. Update Teks Judul & Artis
+            CurrentSongTitle.Text = song.Title;
             CurrentSongArtist.Text = song.Artist;
 
-            // 2. Update Gambar Album (INI YANG HILANG SEBELUMNYA)
-            UpdateAlbumArt(song.FilePath);
+            // 2. Update Gambar Album
+            UpdateAlbumArt(song.FilePath);
 
-            // 3. Update Status Tombol Play (Jadi Pause)
-            UpdatePlayState(true);
+            // 3. Update Status Tombol Play
+            UpdatePlayState(true);
             isPaused = false;
 
-            // 4. Reset Slider & Waktu
-            ProgressSlider.Value = 0;
+            // 4. Reset Slider & Waktu
+            ProgressSlider.Value = 0;
             CurrentTimeText.Text = "0:00";
 
-            // 5. Update Highlight di List
-            NewPlayedList.SelectedItem = song;
+            // 5. Update Highlight di List Utama (NewPlayedList)
+            NewPlayedList.SelectedItem = song;
             NewPlayedList.ScrollIntoView(song);
+
+            // --- TAMBAHAN BARU: Update Highlight di Queue List ---
+            // Kita cari lagu yang sama di dalam CurrentQueue berdasarkan ID atau FilePath
+            // Ini penting karena object 'song' mungkin berbeda referensi memory-nya
+            var queueItem = App.Music.CurrentQueue.FirstOrDefault(s => s.FilePath == song.FilePath);
+
+            if (queueItem != null)
+            {
+                QueueList.SelectedItem = queueItem;       // Sorot lagu di Queue
+                QueueList.ScrollIntoView(queueItem);      // Scroll agar terlihat
+            }
+            // ----------------------------------------------------
         }
 
         private void Filter_Click(object sender, RoutedEventArgs e)
@@ -702,17 +659,12 @@ namespace MusicPlayerApp.Views
         }
 
         // Double Click lagu di dalam Playlist Detail
-        private void PlaylistSongList_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        private void PlaylistSongList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             if (PlaylistSongList.SelectedItem is Song song)
             {
-                // Panggil method play yang sudah ada (sesuaikan nama methodnya jika beda)
-                // PlaySongImpl(song); 
-                // ATAU
-                _currentSong = song;
-                App.Music.PlaySong(song);
-                _timer.Start();
-                UpdateSongDisplay(song);
+                var playlistQueue = PlaylistSongList.Items.Cast<Song>().ToList();
+                App.Music.PlayQueue(playlistQueue, song);
             }
         }
 
@@ -1124,11 +1076,10 @@ namespace MusicPlayerApp.Views
         {
             if (DetailSongList.SelectedItem is Song song)
             {
-                // Set lagu aktif
-                _currentSong = song; // Tambahkan ini agar tombol Next/Prev tau lagu mana yang aktif
-                App.Music.PlaySong(song);
-                _timer.Start();
-                UpdateSongDisplay(song);
+                // Ambil semua lagu di list detail sebagai antrian
+                var detailQueue = DetailSongList.Items.Cast<Song>().ToList();
+
+                App.Music.PlayQueue(detailQueue, song);
             }
         }
 
@@ -1138,18 +1089,8 @@ namespace MusicPlayerApp.Views
             var songs = DetailSongList.ItemsSource as List<Song>;
             if (songs != null && songs.Count > 0)
             {
-                var firstSong = songs[0];
-                _currentSong = firstSong; // Set lagu aktif
-
-                App.Music.PlaySong(firstSong);
-
-                // --- TAMBAHAN WAJIB ---
-                _timer.Start();
-                // ----------------------
-
-                UpdateSongDisplay(firstSong);
-
-                // TODO: (Opsional) Masukkan sisa lagu ke Queue/Playlist controller
+                // Play Queue mulai dari lagu pertama
+                App.Music.PlayQueue(songs, songs[0]);
             }
         }
 
@@ -1245,6 +1186,134 @@ namespace MusicPlayerApp.Views
                 // Simpan sebagai tombol aktif saat ini
                 _activeLibraryButton = btn;
             }
+        }
+
+        // Handler saat lagu berganti (Dipanggil otomatis oleh MusicController)
+        private void OnSongChanged(Song newSong)
+        {
+            // Pastikan update UI dilakukan di Thread Utama
+            Dispatcher.Invoke(() =>
+            {
+                _currentSong = newSong;
+                _timer.Start(); // Pastikan timer jalan
+                UpdateSongDisplay(newSong);
+            });
+        }
+
+        // 1. Tombol Buka/Tutup Queue
+        private void BtnOpenQueue_Click(object sender, RoutedEventArgs e)
+        {
+            if (BtnOpenQueue.IsChecked == true)
+            {
+                // Jalankan Animasi BUKA
+                var sb = (System.Windows.Media.Animation.Storyboard)FindResource("OpenQueueAnimation");
+                sb.Begin();
+
+                // Scroll ke lagu aktif
+                if (_currentSong != null)
+                {
+                    QueueList.ScrollIntoView(_currentSong);
+                    QueueList.SelectedItem = _currentSong;
+                }
+            }
+            else
+            {
+                // Jalankan Animasi TUTUP
+                var sb = (System.Windows.Media.Animation.Storyboard)FindResource("CloseQueueAnimation");
+                sb.Begin();
+            }
+        }
+
+        // 2. Tombol Clear Queue
+        private void BtnClearQueue_Click(object sender, RoutedEventArgs e)
+        {
+            // Bersihkan antrian di Backend
+            App.Music.CurrentQueue.Clear();
+        }
+
+        // 3. Double Click di Queue (Langsung mainkan)
+        private void QueueList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (QueueList.SelectedItem is Models.Song song)
+            {
+                App.Music.PlaySong(song);
+                _currentSong = song; // Update pointer lokal
+                _timer.Start();
+                UpdateSongDisplay(song);
+            }
+        }
+
+        // 1. Saat Mouse ditekan (Simpan posisi awal)
+        private void QueueList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            _dragStartPoint = e.GetPosition(null);
+        }
+
+        // 2. Saat Mouse Bergerak (Cek apakah user sedang drag)
+        private void QueueList_PreviewMouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            // HAPUS check "!IsDragging" karena tidak diperlukan di sini
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                Point position = e.GetPosition(null);
+
+                // Cek apakah mouse sudah geser cukup jauh (agar tidak tertukar dengan klik biasa)
+                if (Math.Abs(position.X - _dragStartPoint.X) > SystemParameters.MinimumHorizontalDragDistance ||
+                    Math.Abs(position.Y - _dragStartPoint.Y) > SystemParameters.MinimumVerticalDragDistance)
+                {
+                    // Pastikan sender adalah WPF ListView
+                    System.Windows.Controls.ListView listView = sender as System.Windows.Controls.ListView;
+                    System.Windows.Controls.ListViewItem listViewItem = FindAncestor<System.Windows.Controls.ListViewItem>((DependencyObject)e.OriginalSource);
+
+                    if (listViewItem == null) return;
+
+                    // Ambil data lagu
+                    MusicPlayerApp.Models.Song contact = (MusicPlayerApp.Models.Song)listView.ItemContainerGenerator.ItemFromContainer(listViewItem);
+
+                    if (contact == null) return;
+
+                    // Bungkus data untuk Drag Drop WPF
+                    System.Windows.DataObject dragData = new System.Windows.DataObject("myFormat", contact);
+                    DragDrop.DoDragDrop(listViewItem, dragData, System.Windows.DragDropEffects.Move);
+                }
+            }
+        }
+
+        // 3. Saat User Melepas Mouse (Drop)
+        private void QueueList_Drop(object sender, System.Windows.DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent("myFormat"))
+            {
+                MusicPlayerApp.Models.Song source = e.Data.GetData("myFormat") as MusicPlayerApp.Models.Song;
+                MusicPlayerApp.Models.Song target = ((FrameworkElement)e.OriginalSource).DataContext as MusicPlayerApp.Models.Song;
+
+                if (source != null && target != null && source != target)
+                {
+                    // Pindahkan item di Backend (ObservableCollection)
+                    int oldIndex = App.Music.CurrentQueue.IndexOf(source);
+                    int newIndex = App.Music.CurrentQueue.IndexOf(target);
+
+                    if (oldIndex != -1 && newIndex != -1)
+                    {
+                        App.Music.CurrentQueue.Move(oldIndex, newIndex);
+                    }
+                }
+            }
+        }
+
+        // Helper untuk mencari parent element
+        private static T FindAncestor<T>(DependencyObject current) where T : DependencyObject
+        {
+            do
+            {
+                if (current is T)
+                {
+                    return (T)current;
+                }
+                current = VisualTreeHelper.GetParent(current);
+            }
+            while (current != null);
+            return null;
         }
     }
 }

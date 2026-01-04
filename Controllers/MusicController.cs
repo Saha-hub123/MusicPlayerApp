@@ -6,6 +6,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using System.Collections.ObjectModel; // Wajib untuk ObservableCollection
 
 namespace MusicPlayerApp.Controllers
 {
@@ -15,6 +17,19 @@ namespace MusicPlayerApp.Controllers
         private readonly FileScannerService _scanner = new FileScannerService();
         private readonly AudioPlayerService _player;
         public bool IsPlaying { get; private set; } = false;
+
+        // --- HAPUS/KOMENTARI BARIS LAMA INI ---
+        // private List<Song> _playbackQueue = new List<Song>(); 
+
+        // --- GANTI DENGAN YANG BARU INI ---
+        // Gunakan ObservableCollection agar UI bisa Drag & Drop langsung
+        public ObservableCollection<Song> CurrentQueue { get; private set; } = new ObservableCollection<Song>();
+
+        private int _queueIndex = -1; // Posisi lagu sekarang di antrian
+
+        // Event agar UI tahu kalau lagu berganti (PENTING untuk update Judul/Cover)
+        public event Action<Song> CurrentSongChanged;
+        // --------------------------------------
 
         // Debounce dictionary (hindari event berulang)
         private static Dictionary<string, DateTime> _eventTracker = new();
@@ -231,29 +246,105 @@ namespace MusicPlayerApp.Controllers
             return _db.GetAllSongs();
         }
 
-        // AUDIO CONTROL
+        // =================================================================
+        // UPDATE BAGIAN: PLAYER CONTROL & QUEUE
+        // =================================================================
 
-        // Memutar lagu baru dari awal
-        public void PlaySong(Song song)
+        // 1. Fungsi PlayQueue (Diupdate)
+        public void PlayQueue(List<Song> songs, Song startingSong = null)
         {
-            _player.Play(song.FilePath);
-            IsPlaying = true;
+            if (songs == null || songs.Count == 0) return;
+
+            // A. Update Antrian (Bersihkan lama, isi baru)
+            CurrentQueue.Clear();
+            foreach (var song in songs)
+            {
+                CurrentQueue.Add(song);
+            }
+
+            // B. Tentukan Index Mulai
+            if (startingSong != null)
+            {
+                // Cari lagu berdasarkan ID biar akurat
+                var foundSong = CurrentQueue.FirstOrDefault(s => s.Id == startingSong.Id);
+                if (foundSong != null)
+                {
+                    _queueIndex = CurrentQueue.IndexOf(foundSong);
+                }
+                else
+                {
+                    _queueIndex = 0;
+                }
+            }
+            else
+            {
+                _queueIndex = 0;
+            }
+
+            // C. Mainkan
+            PlayCurrentIndex();
         }
 
-        // Pause lagu
+        // 2. Fungsi Next (Diupdate variabelnya)
+        public void PlayNext()
+        {
+            if (CurrentQueue.Count == 0) return;
+
+            _queueIndex++;
+            if (_queueIndex >= CurrentQueue.Count) _queueIndex = 0; // Loop ke awal
+
+            PlayCurrentIndex();
+        }
+
+        // 3. Fungsi Previous (Diupdate variabelnya)
+        public void PlayPrevious()
+        {
+            if (CurrentQueue.Count == 0) return;
+
+            _queueIndex--;
+            if (_queueIndex < 0) _queueIndex = CurrentQueue.Count - 1; // Loop ke belakang
+
+            PlayCurrentIndex();
+        }
+
+        // Helper: PlayCurrentIndex (Diupdate variabelnya)
+        private void PlayCurrentIndex()
+        {
+            if (_queueIndex >= 0 && _queueIndex < CurrentQueue.Count)
+            {
+                var song = CurrentQueue[_queueIndex];
+                PlaySong(song);
+            }
+        }
+
+        // Update PlaySong agar memicu Event UI
+        public void PlaySong(Song song)
+        {
+            try
+            {
+                _player.Stop(); // Stop lagu sebelumnya
+                _player.Play(song.FilePath);
+                IsPlaying = true;
+
+                // BERITAHU UI BAHWA LAGU BERGANTI
+                CurrentSongChanged?.Invoke(song);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("Error playing song: " + ex.Message);
+            }
+        }
+
         public void Pause()
         {
             if (!IsPlaying) return;
-
             _player.Pause();
             IsPlaying = false;
         }
 
-        // Resume lagu
         public void Resume()
         {
             if (IsPlaying) return;
-
             _player.Resume();
             IsPlaying = true;
         }
@@ -361,5 +452,7 @@ namespace MusicPlayerApp.Controllers
                 _db.UpdateSong(existingSong);
             }
         }
+
+
     }
 }
