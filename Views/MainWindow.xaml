@@ -6,6 +6,7 @@
             Height="750" Width="1200"
             Background="#1F2945"
             xmlns:local="clr-namespace:MusicPlayerApp"
+            xmlns:helpers="clr-namespace:MusicPlayerApp.Helpers"
             WindowStartupLocation="CenterScreen">
 
     <Window.Resources>
@@ -714,18 +715,52 @@
                         <DataTemplate>
                             <Grid Margin="0 4" Background="Transparent" MouseRightButtonUp="SongRow_RightClick">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="40"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="150"/>
                                     <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="100"/>
                                     <ColumnDefinition Width="40"/>
                                 </Grid.ColumnDefinitions>
 
-                                <TextBlock Text="▶" Grid.Column="0" VerticalAlignment="Center" Foreground="#5CD1FF" FontSize="10" Opacity="0.8"/>
-                                <TextBlock Text="{Binding Title}" Grid.Column="1" VerticalAlignment="Center" Foreground="White" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                                <TextBlock Text="{Binding Artist}" Grid.Column="2" VerticalAlignment="Center" Foreground="#AEB7D3" FontSize="13" TextTrimming="CharacterEllipsis"/>
-                                <TextBlock Text="{Binding DurationFormatted}" Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="#6F7A95" FontSize="13" FontWeight="Medium"/>
+                                <Border Grid.Column="0" Width="45" Height="45" CornerRadius="6" Background="#2A3550" Margin="0 0 15 0">
+                                    <Grid>
+                                        <Path Data="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"
+                          Fill="#3E4C6E" Stretch="Uniform" Width="20" Height="20"
+                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
+                                        <Image helpers:AlbumArtLoader.Song="{Binding}" Stretch="UniformToFill">
+                                            <Image.Clip>
+                                                <RectangleGeometry Rect="0,0,45,45" RadiusX="6" RadiusY="6"/>
+                                            </Image.Clip>
+                                            <Image.Style>
+                                                <Style TargetType="Image">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding CoverPath}" Value="{x:Null}">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding CoverPath}" Value="">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Image.Style>
+                                        </Image>
+
+                                        <Grid x:Name="StatusOverlay" Background="#99000000" Visibility="Collapsed">
+                                            <Path x:Name="StatusIcon" 
+                              Data="M8 5v14l11-7z" 
+                              Fill="White" Stretch="Uniform" Width="14" Height="14"
+                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Grid>
+                                </Border>
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Title}" Foreground="White" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding Artist}" Foreground="#AEB7D3" FontSize="12" Margin="0 2 0 0" TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+
+                                <TextBlock Text="{Binding DurationFormatted}" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="#6F7A95" FontSize="13" FontWeight="Medium" Margin="0 0 20 0"/>
+                                
                                 <Button x:Name="BtnMoreOptions" Grid.Column="4"
                                     Content="⋮"
                                     FontSize="18" FontWeight="Bold"
@@ -870,6 +905,18 @@
                                     </Button.ContextMenu>
                                 </Button>
                             </Grid>
+                            <DataTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="StatusOverlay" Property="Visibility" Value="Visible"/>
+                                </Trigger>
+
+                                <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                    <Setter TargetName="StatusOverlay" Property="Visibility" Value="Visible"/>
+                                    <Setter TargetName="StatusOverlay" Property="Background" Value="#CC5CD1FF"/>
+                                    <Setter TargetName="StatusIcon" Property="Data" Value="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                                </DataTrigger>
+
+                            </DataTemplate.Triggers>
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>
@@ -901,17 +948,51 @@
                         <DataTemplate>
                             <Grid Margin="0 4" Background="Transparent" MouseRightButtonUp="SongRow_RightClick">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="40"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="150"/>
                                     <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="100"/>
                                     <ColumnDefinition Width="40"/>
                                 </Grid.ColumnDefinitions>
 
-                                <TextBlock Text="▶" Grid.Column="0" VerticalAlignment="Center" Foreground="#5CD1FF" FontSize="10" Opacity="0.8"/>
-                                <TextBlock Text="{Binding Title}" Grid.Column="1" VerticalAlignment="Center" Foreground="White" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                                <TextBlock Text="{Binding Artist}" Grid.Column="2" VerticalAlignment="Center" Foreground="#AEB7D3" FontSize="13" TextTrimming="CharacterEllipsis"/>
-                                <TextBlock Text="{Binding DurationFormatted}" Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="#6F7A95" FontSize="13" FontWeight="Medium"/>
+                                <Border Grid.Column="0" Width="45" Height="45" CornerRadius="6" Background="#2A3550" Margin="0 0 15 0">
+                                    <Grid>
+                                        <Path Data="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"
+                          Fill="#3E4C6E" Stretch="Uniform" Width="20" Height="20"
+                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                                        <Image Source="{Binding CoverPath}" Stretch="UniformToFill">
+                                            <Image.Clip>
+                                                <RectangleGeometry Rect="0,0,45,45" RadiusX="6" RadiusY="6"/>
+                                            </Image.Clip>
+                                            <Image.Style>
+                                                <Style TargetType="Image">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding CoverPath}" Value="{x:Null}">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding CoverPath}" Value="">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Image.Style>
+                                        </Image>
+
+                                        <Grid x:Name="StatusOverlay" Background="#99000000" Visibility="Collapsed">
+                                            <Path x:Name="StatusIcon" 
+                              Data="M8 5v14l11-7z" 
+                              Fill="White" Stretch="Uniform" Width="14" Height="14"
+                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Grid>
+                                </Border>
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Title}" Foreground="White" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding Artist}" Foreground="#AEB7D3" FontSize="12" Margin="0 2 0 0" TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+
+                                <TextBlock Text="{Binding DurationFormatted}" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="#6F7A95" FontSize="13" FontWeight="Medium" Margin="0 0 20 0"/>
 
                                 <Button x:Name="BtnMoreOptions" Grid.Column="4"
                                     Content="⋮"
@@ -1050,6 +1131,18 @@ Fill="White" Stretch="Uniform" Width="14" Height="14"/>
                                     </Button.ContextMenu>
                                 </Button>
                             </Grid>
+                            <DataTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="StatusOverlay" Property="Visibility" Value="Visible"/>
+                                </Trigger>
+
+                                <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                    <Setter TargetName="StatusOverlay" Property="Visibility" Value="Visible"/>
+                                    <Setter TargetName="StatusOverlay" Property="Background" Value="#CC5CD1FF"/>
+                                    <Setter TargetName="StatusIcon" Property="Data" Value="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                                </DataTrigger>
+
+                            </DataTemplate.Triggers>
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>
@@ -1161,17 +1254,51 @@ Fill="White" Stretch="Uniform" Width="14" Height="14"/>
                             <DataTemplate>
                                 <Grid Margin="0 4" Background="Transparent" MouseRightButtonUp="SongRow_RightClick">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="40"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="150"/>
                                         <ColumnDefinition Width="60"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="100"/>
                                         <ColumnDefinition Width="40"/>
                                     </Grid.ColumnDefinitions>
 
-                                    <TextBlock Text="▶" Grid.Column="0" VerticalAlignment="Center" Foreground="#5CD1FF" FontSize="10" Opacity="0.8"/>
-                                    <TextBlock Text="{Binding Title}" Grid.Column="1" VerticalAlignment="Center" Foreground="White" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock Text="{Binding Artist}" Grid.Column="2" VerticalAlignment="Center" Foreground="#AEB7D3" FontSize="13" TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock Text="{Binding DurationFormatted}" Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="#6F7A95" FontSize="13" FontWeight="Medium"/>
+                                    <Border Grid.Column="0" Width="45" Height="45" CornerRadius="6" Background="#2A3550" Margin="0 0 15 0">
+                                        <Grid>
+                                            <Path Data="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"
+                          Fill="#3E4C6E" Stretch="Uniform" Width="20" Height="20"
+                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                                            <Image Source="{Binding CoverPath}" Stretch="UniformToFill">
+                                                <Image.Clip>
+                                                    <RectangleGeometry Rect="0,0,45,45" RadiusX="6" RadiusY="6"/>
+                                                </Image.Clip>
+                                                <Image.Style>
+                                                    <Style TargetType="Image">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding CoverPath}" Value="{x:Null}">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding CoverPath}" Value="">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Image.Style>
+                                            </Image>
+
+                                            <Grid x:Name="StatusOverlay" Background="#99000000" Visibility="Collapsed">
+                                                <Path x:Name="StatusIcon" 
+                              Data="M8 5v14l11-7z" 
+                              Fill="White" Stretch="Uniform" Width="14" Height="14"
+                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Grid>
+                                    </Border>
+
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Title}" Foreground="White" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding Artist}" Foreground="#AEB7D3" FontSize="12" Margin="0 2 0 0" TextTrimming="CharacterEllipsis"/>
+                                    </StackPanel>
+
+                                    <TextBlock Text="{Binding DurationFormatted}" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="#6F7A95" FontSize="13" FontWeight="Medium" Margin="0 0 20 0"/>
 
                                     <Button x:Name="BtnMoreOptions" Grid.Column="4"
                                         Content="⋮"
@@ -1310,6 +1437,18 @@ Fill="White" Stretch="Uniform" Width="14" Height="14"/>
                                         </Button.ContextMenu>
                                     </Button>
                                 </Grid>
+                                <DataTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="StatusOverlay" Property="Visibility" Value="Visible"/>
+                                    </Trigger>
+
+                                    <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                        <Setter TargetName="StatusOverlay" Property="Visibility" Value="Visible"/>
+                                        <Setter TargetName="StatusOverlay" Property="Background" Value="#CC5CD1FF"/>
+                                        <Setter TargetName="StatusIcon" Property="Data" Value="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                                    </DataTrigger>
+
+                                </DataTemplate.Triggers>
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>

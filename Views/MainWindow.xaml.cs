@@ -269,20 +269,29 @@ namespace MusicPlayerApp.Views
                 return;
             }
 
-            // Logika Toggle
-            if (App.Music.IsPlaying)
+            if (App.Music.IsPlaying)
             {
-                // Jika sedang main -> PAUSE
-                App.Music.Pause();
-                UpdatePlayState(false); // Ubah ikon jadi Segitiga
-                _timer.Stop();
+                // PAUSE
+                App.Music.Pause();
+                UpdatePlayState(false);
+                _timer.Stop();
+
+                // Update di List: Ubah icon jadi Play (atau hilangkan status playing)
+                // Tergantung selera: 
+                // A. Tetap highlight tapi icon jadi play? -> _currentSong.IsPlaying = false;
+                // B. Tetap icon pause? (Biasanya app musik membedakan Active vs Playing)
+                // Kita pakai cara sederhana: Matikan indikator animasi
+                _currentSong.IsPlaying = false;
             }
             else
             {
-                // Jika sedang diam -> RESUME
-                App.Music.Resume();     // Ini sekarang memanggil _player.Resume()
-                UpdatePlayState(true);  // Ubah ikon jadi Pause (Garis dua)
-                _timer.Start();
+                // RESUME
+                App.Music.Resume();
+                UpdatePlayState(true);
+                _timer.Start();
+
+                // Update di List: Icon jadi Pause
+                _currentSong.IsPlaying = true;
             }
         }
 
@@ -1300,11 +1309,22 @@ namespace MusicPlayerApp.Views
         // Handler saat lagu berganti (Dipanggil otomatis oleh MusicController)
         private void OnSongChanged(Song newSong)
         {
-            // Pastikan update UI dilakukan di Thread Utama
             Dispatcher.Invoke(() =>
             {
+                // 1. Reset status lagu sebelumnya (jika ada)
+                if (_currentSong != null)
+                {
+                    _currentSong.IsPlaying = false;
+                }
+
+                // 2. Set status lagu baru
+                if (newSong != null)
+                {
+                    newSong.IsPlaying = true; // Ini akan memicu Trigger XAML (Icon jadi Pause)
+                }
+
                 _currentSong = newSong;
-                _timer.Start(); // Pastikan timer jalan
+                _timer.Start();
                 UpdateSongDisplay(newSong);
             });
         }
