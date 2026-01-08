@@ -75,10 +75,10 @@ namespace MusicPlayerApp
             main.Show();
 
             // Jangan panggil ReloadSongList() sebelum UI siap
-            main.Loaded += (s, ev) =>
-            {
-                main.ReloadSongList();
-            };
+            //main.Loaded += (s, ev) =>
+            //{
+            //    main.ReloadSongList();
+            //};
         }
 
 

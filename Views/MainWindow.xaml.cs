@@ -109,6 +109,15 @@ namespace MusicPlayerApp.Views
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            // --- PERBAIKAN DI SINI ---
+            // Reset filter folder agar memuat SEMUA lagu dari database di awal,
+            // meskipun kita tetap memantau folder config di background.
+            App.CurrentMusicFolder = null;
+
+            // Pastikan tombol sidebar "Music (Default)" tidak terlihat aktif
+            ResetSidebarButtons();
+            // -------------------------
+
             LoadSongs();
         }
 
