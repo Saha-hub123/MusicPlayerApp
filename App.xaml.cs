@@ -19,6 +19,9 @@ namespace MusicPlayerApp
         public static FileSystemWatcher Watcher { get; private set; }
         public static MainWindow MainUI { get; private set; }
 
+        // TAMBAHAN BARU
+        public static YouTubeService YouTube { get; private set; }
+
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
@@ -79,6 +82,16 @@ namespace MusicPlayerApp
             //{
             //    main.ReloadSongList();
             //};
+
+            // Init service
+            Db = new DatabaseService(dbPath);
+            Player = new AudioPlayerService();
+
+            // TAMBAHAN BARU: Init YouTube Service
+            YouTube = new YouTubeService();
+
+            Music = new MusicController(Db, Player);
+            Playlists = new PlaylistController(Db);
         }
 
 

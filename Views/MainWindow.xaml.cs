@@ -210,47 +210,59 @@ namespace MusicPlayerApp.Views
             }
         }
 
-        private void UpdateAlbumArt(string filePath)
+        private void UpdateAlbumArt(Song song) // Ganti parameter dari string filePath jadi Song object
         {
             try
             {
-                // 1. Baca metadata file MP3 menggunakan TagLib
-                var file = TagLib.File.Create(filePath);
-
-                // 2. Cek apakah file memiliki gambar (Picture)
-                if (file.Tag.Pictures.Length > 0)
+                // KASUS 1: LAGU ONLINE (YouTube)
+                // Kita cek apakah CoverPath berisi URL (http)
+                if (!string.IsNullOrEmpty(song.CoverPath) && song.CoverPath.StartsWith("http"))
                 {
-                    // Ambil data gambar pertama
-                    var bin = (byte[])file.Tag.Pictures[0].Data.Data;
+                    var bitmap = new BitmapImage();
+                    bitmap.BeginInit();
+                    bitmap.UriSource = new Uri(song.CoverPath, UriKind.Absolute);
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad; // Penting agar gambar dimuat penuh
+                    bitmap.EndInit();
 
-                    // Konversi byte array menjadi BitmapImage
-                    BitmapImage albumCover = new BitmapImage();
-                    using (MemoryStream ms = new MemoryStream(bin))
+                    var brush = new ImageBrush();
+                    brush.ImageSource = bitmap;
+                    brush.Stretch = Stretch.UniformToFill;
+                    AlbumArtContainer.Fill = brush;
+                    return; // Selesai, keluar fungsi
+                }
+
+                // KASUS 2: LAGU LOKAL (Gunakan TagLib)
+                // Cek apakah file benar-benar ada di disk sebelum baca TagLib
+                if (File.Exists(song.FilePath))
+                {
+                    var file = TagLib.File.Create(song.FilePath);
+                    if (file.Tag.Pictures.Length > 0)
                     {
-                        albumCover.BeginInit();
-                        albumCover.CacheOption = BitmapCacheOption.OnLoad;
-                        albumCover.StreamSource = ms;
-                        albumCover.EndInit();
+                        var bin = (byte[])file.Tag.Pictures[0].Data.Data;
+                        BitmapImage albumCover = new BitmapImage();
+                        using (MemoryStream ms = new MemoryStream(bin))
+                        {
+                            albumCover.BeginInit();
+                            albumCover.CacheOption = BitmapCacheOption.OnLoad;
+                            albumCover.StreamSource = ms;
+                            albumCover.EndInit();
+                        }
+
+                        var brush = new ImageBrush();
+                        brush.ImageSource = albumCover;
+                        brush.Stretch = Stretch.UniformToFill;
+                        AlbumArtContainer.Fill = brush;
+                        return;
                     }
-
-                    // 3. Masukkan gambar ke Ellipse (AlbumArtContainer)
-                    var brush = new ImageBrush();
-                    brush.ImageSource = albumCover;
-                    brush.Stretch = Stretch.UniformToFill; // Agar gambar pas di lingkaran
-
-                    AlbumArtContainer.Fill = brush;
                 }
-                else
-                {
-                    // Jika tidak ada gambar, kembalikan ke warna default
-                    // Pastikan kode warna sama dengan XAML awal kamu
-                    AlbumArtContainer.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2A3550"));
-                }
+
+                // DEFAULT (Jika tidak ada gambar / Error)
+                AlbumArtContainer.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2A3550"));
             }
             catch (Exception)
             {
-                // Jika terjadi error (misal file rusak), set ke default
-                AlbumArtContainer.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2A3550"));
+                // Fallback jika terjadi error apapun
+                AlbumArtContainer.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2A3550"));
             }
         }
 
@@ -369,9 +381,11 @@ namespace MusicPlayerApp.Views
         {
             string query = SearchBox.Text.ToLower();
 
+            // 1. Logika Filter Lokal (Tetap sama)
             if (string.IsNullOrWhiteSpace(query))
             {
                 NewPlayedList.ItemsSource = _allSongs;
+                BtnSearchOnline.Visibility = Visibility.Collapsed; // Sembunyikan tombol
                 return;
             }
 
@@ -382,6 +396,11 @@ namespace MusicPlayerApp.Views
               .ToList();
 
             NewPlayedList.ItemsSource = filtered;
+
+            // 2. Logika Tombol Online (BARU)
+            // Selalu munculkan tombol jika ada teks ketikan
+            BtnSearchOnline.Visibility = Visibility.Visible;
+            BtnSearchOnline.Content = $"Search '{SearchBox.Text}' on YouTube";
         }
 
         private void UpdatePlayState(bool isPlaying)
@@ -418,7 +437,7 @@ namespace MusicPlayerApp.Views
             CurrentSongArtist.Text = song.Artist;
 
             // 2. Update Gambar Album
-            UpdateAlbumArt(song.FilePath);
+            UpdateAlbumArt(song);
 
             // 3. Update Status Tombol Play
             UpdatePlayState(true);
@@ -1806,6 +1825,37 @@ namespace MusicPlayerApp.Views
                     return result;
             }
             return null;
+        }
+
+        private async void BtnSearchOnline_Click(object sender, RoutedEventArgs e)
+        {
+            string query = SearchBox.Text;
+            if (string.IsNullOrWhiteSpace(query)) return;
+
+            // 1. Ubah UI jadi Loading
+            BtnSearchOnline.Content = "Searching YouTube...";
+            BtnSearchOnline.IsEnabled = false;
+            Mouse.OverrideCursor = Cursors.Wait; // Ubah kursor jadi loading
+
+            // 2. Panggil Service YouTube (Async)
+            // Ini memanggil service yang sudah kita buat di Tahap 1
+            var onlineSongs = await App.YouTube.SearchVideoAsync(query);
+
+            // 3. Tampilkan Hasil
+            NewPlayedList.ItemsSource = onlineSongs;
+
+            // 4. Update Header Judul
+            PageTitle.Text = $"YouTube Results: {query}";
+
+            // 5. Kembalikan UI normal
+            BtnSearchOnline.IsEnabled = true;
+            BtnSearchOnline.Visibility = Visibility.Collapsed; // Sembunyikan tombol setelah search
+            Mouse.OverrideCursor = null;
+
+            if (onlineSongs.Count == 0)
+            {
+                MessageBox.Show("No results found on YouTube.");
+            }
         }
     }
 }

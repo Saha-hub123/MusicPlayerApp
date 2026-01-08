@@ -21,6 +21,7 @@ namespace MusicPlayerApp.Models
 
         public string Artist { get; set; }
         public double Duration { get; set; }
+        public string CoverPath { get; set; } // Untuk menyimpan URL Gambar / Path Lokal
 
         [Indexed]
         public bool IsLiked { get; set; } = false;

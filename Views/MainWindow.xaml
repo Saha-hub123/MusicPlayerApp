@@ -881,13 +881,29 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0 10 0 10">
-                        <Button x:Name="BtnBack" Click="BtnBack_Click" Visibility="Collapsed"
-                    Style="{StaticResource IconButtonStyle}" Margin="0 0 15 0" ToolTip="Back">
-                            <TextBlock Text="⬅" Foreground="White" FontSize="18"/>
-                        </Button>
-                        <TextBlock x:Name="PageTitle" Text="All Songs" FontSize="22" FontWeight="Bold" Foreground="White"/>
-                    </StackPanel>
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0 10 0 10">
+                    <Button x:Name="BtnBack" Click="BtnBack_Click" Visibility="Collapsed"
+            Style="{StaticResource IconButtonStyle}" Margin="0 0 15 0" ToolTip="Back">
+                        <TextBlock Text="⬅" Foreground="White" FontSize="18"/>
+                    </Button>
+
+                    <TextBlock x:Name="PageTitle" Text="All Songs" FontSize="22" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+
+                    <Button x:Name="BtnSearchOnline" Click="BtnSearchOnline_Click" 
+            Visibility="Collapsed"
+            Margin="20 0 0 0" Padding="15 5" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="#FF0000" CornerRadius="15">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <TextBlock Text="▶" Foreground="White" Margin="0 0 8 0" FontSize="10"/>
+                                        <ContentPresenter TextElement.Foreground="White" TextElement.FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </StackPanel>
 
                 <ListView Grid.Row="1" x:Name="NewPlayedList"
                   VirtualizingPanel.ScrollUnit="Pixel"

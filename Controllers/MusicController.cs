@@ -436,16 +436,43 @@ namespace MusicPlayerApp.Controllers
             }
         }
 
-        // Update PlaySong agar memicu Event UI
-        public void PlaySong(Song song)
+        // Ubah PlaySong menjadi async void agar bisa pakai await
+        public async void PlaySong(Song song)
         {
             try
             {
-                _player.Stop(); // Stop lagu sebelumnya
-                _player.Play(song.FilePath);
+                string urlToPlay = song.FilePath;
+
+                // 1. DETEKSI LOGIKA YOUTUBE
+                if (song.FilePath.StartsWith("YT:"))
+                {
+                    // Ambil ID Video (Hapus prefix "YT:")
+                    string videoId = song.FilePath.Substring(3); // "YT:" panjangnya 3
+
+                    // Minta URL asli ke Service (Async)
+                    // Ini akan butuh waktu 1-2 detik tergantung internet
+                    var streamUrl = await App.YouTube.GetAudioStreamUrlAsync(videoId);
+
+                    if (!string.IsNullOrEmpty(streamUrl))
+                    {
+                        urlToPlay = streamUrl;
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine("Gagal mendapatkan Stream URL YouTube");
+                        return; // Batal putar
+                    }
+                }
+
+                // 2. PROSES PEMUTARAN (Sama seperti sebelumnya)
+                _player.Stop();
+
+                // Kirim URL yang sudah valid (entah path lokal atau link HTTPS) ke Player
+                _player.Play(urlToPlay);
+
                 IsPlaying = true;
 
-                // BERITAHU UI BAHWA LAGU BERGANTI
+                // Beritahu UI
                 CurrentSongChanged?.Invoke(song);
             }
             catch (Exception ex)
