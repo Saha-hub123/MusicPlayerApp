@@ -261,6 +261,9 @@
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0" Background="#1B2338">
+            <ScrollViewer VerticalScrollBarVisibility="Hidden" 
+                  HorizontalScrollBarVisibility="Disabled"
+                  PanningMode="VerticalOnly">
                 <StackPanel Margin="20 30 20 20">
 
                     <StackPanel Orientation="Horizontal" Margin="0 0 0 30">
@@ -302,7 +305,15 @@
                         </StackPanel>
                     </Button>
 
-                    <Button x:Name="BtnAlbums" Click="Filter_Click" Tag="Albums" Style="{StaticResource SidebarButtonStyle}">
+                <Button x:Name="BtnYouTube" Click="Filter_Click" Tag="YouTube" Style="{StaticResource SidebarButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                            <Path Data="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" 
+              Fill="#FF0000" Stretch="Uniform" Width="18" Height="14" Margin="0 0 15 0"/>
+                        <TextBlock Text="YouTube"/>
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="BtnAlbums" Click="Filter_Click" Tag="Albums" Style="{StaticResource SidebarButtonStyle}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="💿" Margin="0 0 15 0"/>
                             <TextBlock Text="Albums"/>
@@ -385,6 +396,7 @@
                     </Button>
 
                 </StackPanel>
+            </ScrollViewer>
             </Border>
 
             <Grid Grid.Column="1">
@@ -835,9 +847,7 @@
                                                                             <ColumnDefinition Width="*"/>
                                                                             <ColumnDefinition Width="Auto"/>
                                                                         </Grid.ColumnDefinitions>
-
                                                                         <ContentPresenter Grid.Column="0" ContentSource="Header" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-
                                                                         <Path x:Name="RightArrow" Grid.Column="1" Data="M0,0 L4,3.5 L0,7 Z" Fill="#AEB7D3" Margin="10,0,0,0" VerticalAlignment="Center" Visibility="Collapsed"/>
                                                                     </Grid>
                                                                 </Border>
@@ -851,7 +861,7 @@
                                                         </Setter.Value>
                                                     </Setter>
                                                 </Style>
-                                                
+
                                                 <Style TargetType="{x:Type Separator}">
                                                     <Setter Property="Template">
                                                         <Setter.Value>
@@ -935,7 +945,42 @@
                             <TextBlock Text="⬅" Foreground="White" FontSize="18"/>
                         </Button>
                         <TextBlock x:Name="PageTitle" Text="All Songs" FontSize="22" FontWeight="Bold" Foreground="White"/>
-                    </StackPanel>
+                    <Button x:Name="BtnSearchOnline" Click="BtnSearchOnline_Click" 
+        Visibility="Collapsed" 
+        Margin="20 0 0 0" 
+        Cursor="Hand" ToolTip="Search on YouTube">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="Bd" Background="#2A3550" CornerRadius="18" Padding="15 6" 
+                    BorderBrush="#FF0000" BorderThickness="1">
+                                    <Border.Effect>
+                                        <DropShadowEffect Color="#FF0000" BlurRadius="10" Opacity="0.15" ShadowDepth="0"/>
+                                    </Border.Effect>
+
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Path Data="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" 
+                          Fill="#FF0000" Stretch="Uniform" Height="14" Width="20" Margin="0 0 8 0"/>
+
+                                        <ContentPresenter TextElement.Foreground="White" 
+                                      TextElement.FontWeight="SemiBold" 
+                                      TextElement.FontSize="13"
+                                      VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Bd" Property="Background" Value="#3E4C6E"/>
+                                        <Setter TargetName="Bd" Property="BorderBrush" Value="#FF4444"/>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter TargetName="Bd" Property="Background" Value="#1B2338"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </StackPanel>
 
                 <ListView Grid.Row="1" x:Name="NewPlayedList"
                   VirtualizingPanel.ScrollUnit="Pixel"
@@ -1112,6 +1157,12 @@
                                                     </Setter>
                                                 </Style>
                                             </ContextMenu.Resources>
+                                            <MenuItem Header="Add to Queue" Click="Context_AddToQueue_Click">
+                                                <MenuItem.Icon>
+                                                    <Path Data="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z" 
+              Fill="White" Stretch="Uniform" Width="14" Height="14"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
 
                                             <MenuItem Header="Save to Liked Songs" Click="Context_ToggleLike_Click">
                                                 <MenuItem.Icon>
@@ -1220,32 +1271,32 @@ Fill="White" Stretch="Uniform" Width="14" Height="14"/>
                         </ListBox.ItemTemplate>
                     </ListBox>
 
-                    <Grid Grid.Row="1" x:Name="DetailView" Visibility="Collapsed">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="250"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
+                <Grid Grid.Row="1" x:Name="DetailView" Visibility="Collapsed">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="250"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-                        <StackPanel Grid.Column="0" Margin="0 0 30 0">
-                            <Border Width="200" Height="200" CornerRadius="12" Background="#2A3550" HorizontalAlignment="Left">
-                                <Border.Effect>
-                                    <DropShadowEffect BlurRadius="20" Color="Black" Opacity="0.5"/>
-                                </Border.Effect>
-                                <Image x:Name="DetailCoverImage" Stretch="UniformToFill"/>
-                            </Border>
+                    <StackPanel Grid.Column="0" Margin="0 0 30 0">
+                        <Border Width="200" Height="200" CornerRadius="12" Background="#2A3550" HorizontalAlignment="Left">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="20" Color="Black" Opacity="0.5"/>
+                            </Border.Effect>
+                            <Image x:Name="DetailCoverImage" Stretch="UniformToFill"/>
+                        </Border>
 
-                            <TextBlock x:Name="DetailTitle" Text="Nama Album" Foreground="White" FontSize="24" FontWeight="Bold" 
+                        <TextBlock x:Name="DetailTitle" Text="Nama Album" Foreground="White" FontSize="24" FontWeight="Bold" 
                            Margin="0 20 0 5" TextWrapping="Wrap"/>
 
-                            <TextBlock x:Name="DetailSubtitle" Text="Nama Artis • 2024" Foreground="#AEB7D3" FontSize="16" 
+                        <TextBlock x:Name="DetailSubtitle" Text="Nama Artis • 2024" Foreground="#AEB7D3" FontSize="16" 
                            Margin="0 0 0 20"/>
 
-                            <Button x:Name="BtnPlayAllDetail" Content="Play All" Click="BtnPlayAllDetail_Click"
+                        <Button x:Name="BtnPlayAllDetail" Content="Play All" Click="BtnPlayAllDetail_Click"
                         Style="{StaticResource SidebarButtonStyle}" 
                         Background="#5CD1FF" Foreground="#1B2338" FontWeight="Bold" HorizontalAlignment="Left" Width="120"/>
-                        </StackPanel>
+                    </StackPanel>
 
-                        <ListView Grid.Column="1" x:Name="DetailSongList"
+                    <ListView Grid.Column="1" x:Name="DetailSongList"
                       VirtualizingPanel.ScrollUnit="Pixel"
                       Background="Transparent" BorderThickness="0"
                       ItemContainerStyle="{StaticResource MusicListItemStyle}"
@@ -1419,6 +1470,12 @@ Fill="White" Stretch="Uniform" Width="14" Height="14"/>
                                                         </Setter>
                                                     </Style>
                                                 </ContextMenu.Resources>
+                                                <MenuItem Header="Add to Queue" Click="Context_AddToQueue_Click">
+                                                    <MenuItem.Icon>
+                                                        <Path Data="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z" 
+              Fill="White" Stretch="Uniform" Width="14" Height="14"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
 
                                                 <MenuItem Header="Save to Liked Songs" Click="Context_ToggleLike_Click">
                                                     <MenuItem.Icon>
@@ -1455,88 +1512,450 @@ Fill="White" Stretch="Uniform" Width="14" Height="14"/>
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>
-                    </Grid>
-
                 </Grid>
-                <Border x:Name="QueueDrawer" Grid.Row="0" Grid.RowSpan="2"
-            Background="#1F2940"
-            VerticalAlignment="Bottom" 
-            Height="400" 
-            Margin="0 0 0 85" 
-            CornerRadius="16 16 0 0"
-            Visibility="Collapsed">
-                    <Border.Effect>
-                        <DropShadowEffect BlurRadius="20" Color="Black" Opacity="0.5" Direction="90"/>
-                    </Border.Effect>
 
-                    <Border.RenderTransform>
-                        <TranslateTransform x:Name="QueueDrawerTransform" Y="400"/>
-                    </Border.RenderTransform>
+            </Grid>
 
-                    <Grid Margin="20">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
+            <Grid x:Name="YouTubeView" Grid.Column="1" Grid.Row="0" Margin="20 20 20 0" Visibility="Collapsed">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
-                        <Grid Grid.Row="0" Margin="0 0 0 15">
-                            <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="Now Playing" Foreground="#5CD1FF" FontWeight="Bold" FontSize="16" VerticalAlignment="Center"/>
-                                <TextBlock Text=" • Next Up" Foreground="#6F7A95" FontSize="16" VerticalAlignment="Center" Margin="5 0"/>
-                            </StackPanel>
+                <StackPanel Grid.Row="0" HorizontalAlignment="Stretch" Margin="0 0 0 20">
 
-                            <Button HorizontalAlignment="Right" Content="Clear" Foreground="#FF5C5C" 
-                        Style="{StaticResource IconButtonStyle}" FontWeight="Bold" FontSize="12"
-                        Click="BtnClearQueue_Click"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0 0 0 20">
+                        <Path Data="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" 
+                  Fill="#FF0000" Stretch="Uniform" Height="30" Width="40" Margin="0 0 15 0"/>
+                        <TextBlock Text="YouTube Search" FontSize="28" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <Border Background="#2A3550" CornerRadius="25" Width="600" Height="50" HorizontalAlignment="Center">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="15" Color="Black" Opacity="0.3" ShadowDepth="2"/>
+                        </Border.Effect>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="50"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="50"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Text="🔍" Foreground="#6F7A95" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                            <TextBox x:Name="YTSearchBox" Grid.Column="1" 
+                         Background="Transparent" BorderThickness="0" 
+                         Foreground="White" FontSize="16" CaretBrush="White"
+                         VerticalContentAlignment="Center"
+                         KeyDown="YTSearchBox_KeyDown"
+                         Tag="Search for songs, artists, or albums..."/>
+
+                            <Button Grid.Column="2" Background="Transparent" BorderThickness="0" Cursor="Hand" Click="BtnInternalYTSearch_Click">
+                                <TextBlock Text="➔" Foreground="#5CD1FF" FontSize="18" FontWeight="Bold"/>
+                            </Button>
                         </Grid>
+                    </Border>
+                </StackPanel>
 
-                    <ListView Grid.Row="1" x:Name="QueueList"
+                <ListView Grid.Row="1" x:Name="YTSearchResults"
               VirtualizingPanel.ScrollUnit="Pixel"
               Background="Transparent" BorderThickness="0"
+              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
               ScrollViewer.VerticalScrollBarVisibility="Auto"
               ItemContainerStyle="{StaticResource MusicListItemStyle}"
-          
-              ItemsSource="{Binding Source={x:Static local:App.Music}, Path=CurrentQueue}"
-          
-              AllowDrop="True"
-              PreviewMouseLeftButtonDown="QueueList_PreviewMouseLeftButtonDown"
-              PreviewMouseMove="QueueList_PreviewMouseMove"
-              Drop="QueueList_Drop"
-              MouseDoubleClick="QueueList_MouseDoubleClick">
+              MouseDoubleClick="YTSearchResults_MouseDoubleClick">
+
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0 4" Background="Transparent" MouseRightButtonUp="SongRow_RightClick">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="65"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="40"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Border Grid.Column="0" Width="48" Height="48" CornerRadius="8" 
+                            Background="#2A3550" Margin="0 0 15 0" BorderBrush="#3E4C6E" BorderThickness="1">
+                                    <Grid>
+                                        <Grid.Clip>
+                                            <RectangleGeometry Rect="0,0,48,48" RadiusX="8" RadiusY="8"/>
+                                        </Grid.Clip>
+                                        <Image helpers:AlbumArtLoader.Item="{Binding}" Stretch="UniformToFill"/>
+
+                                        <Grid x:Name="StatusOverlay" Visibility="Collapsed">
+                                            <Border Background="#101010" Opacity="0.6"/>
+                                            <Path Data="M8 5v14l11-7z" Fill="White" Stretch="Uniform" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Grid>
+                                </Border>
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Title}" Foreground="White" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding Artist}" Foreground="#AEB7D3" FontSize="12" Margin="0 2 0 0" TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+
+                                <TextBlock Text="{Binding DurationFormatted}" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="#6F7A95" FontSize="13" Margin="0 0 20 0"/>
+
+                                <Button x:Name="BtnMoreOptions" Grid.Column="5"
+          Content="⋮"
+          FontSize="18" FontWeight="Bold"
+          Background="Transparent" BorderThickness="0"
+          Foreground="#6F7A95"
+          HorizontalAlignment="Center" VerticalAlignment="Center"
+          Cursor="Hand"
+          Click="SongMenu_Click">
+
+                                    <Button.ContextMenu>
+                                        <ContextMenu x:Name="SongContextMenu">
+                                            <ContextMenu.Resources>
+                                                <Style TargetType="{x:Type MenuItem}">
+                                                    <Setter Property="Foreground" Value="#E0E0E0"/>
+                                                    <Setter Property="FontSize" Value="13"/>
+                                                    <Setter Property="FontWeight" Value="Medium"/>
+                                                    <Setter Property="Cursor" Value="Hand"/>
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="{x:Type MenuItem}">
+                                                                <Border x:Name="Border" Padding="12,6" Background="Transparent">
+                                                                    <Grid>
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="20"/>
+                                                                            <ColumnDefinition Width="10"/>
+                                                                            <ColumnDefinition Width="*"/>
+                                                                            <ColumnDefinition Width="Auto"/>
+                                                                        </Grid.ColumnDefinitions>
+                                                                        <ContentPresenter Grid.Column="0" ContentSource="Icon" HorizontalAlignment="Center" VerticalAlignment="Center" Width="16" Height="16"/>
+                                                                        <ContentPresenter Grid.Column="2" ContentSource="Header" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                                        <Path x:Name="RightArrow" Grid.Column="3" Data="M0,0 L4,3.5 L0,7 Z" Fill="#AEB7D3" Margin="10,0,0,0" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                                                        <Popup x:Name="PART_Popup" AllowsTransparency="True" Focusable="False" 
+                                                 HorizontalOffset="2" VerticalOffset="-4"
+                                                 IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}" 
+                                                 Placement="Right">
+                                                                            <Border Background="#1F2940" BorderThickness="1" BorderBrush="#3E4C6E" CornerRadius="8" Padding="2">
+                                                                                <ScrollViewer CanContentScroll="True" MaxHeight="300" VerticalScrollBarVisibility="Auto">
+                                                                                    <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle" />
+                                                                                </ScrollViewer>
+                                                                            </Border>
+                                                                        </Popup>
+                                                                    </Grid>
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsHighlighted" Value="True">
+                                                                        <Setter TargetName="Border" Property="Background" Value="#3E4C6E"/>
+                                                                        <Setter Property="Foreground" Value="White"/>
+                                                                    </Trigger>
+                                                                    <Trigger Property="Role" Value="SubmenuHeader">
+                                                                        <Setter TargetName="RightArrow" Property="Visibility" Value="Visible"/>
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                                <Style TargetType="{x:Type Separator}">
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="{x:Type Separator}">
+                                                                <Border Height="1" Background="#3E4C6E" Margin="0,6"/>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                                <Style TargetType="{x:Type ContextMenu}">
+                                                    <Setter Property="HasDropShadow" Value="True" />
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="{x:Type ContextMenu}">
+                                                                <Border Background="#1F2940" BorderThickness="1" BorderBrush="#3E4C6E" CornerRadius="8" Padding="0,4">
+                                                                    <Border.Effect>
+                                                                        <DropShadowEffect BlurRadius="12" Color="Black" Opacity="0.5" ShadowDepth="4"/>
+                                                                    </Border.Effect>
+                                                                    <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle" />
+                                                                </Border>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </ContextMenu.Resources>
+                                            <MenuItem Header="Add to Queue" Click="Context_AddToQueue_Click">
+                                                <MenuItem.Icon>
+                                                    <Path Data="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z" 
+Fill="White" Stretch="Uniform" Width="14" Height="14"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+
+                                            <MenuItem Header="Save to Liked Songs" Click="Context_ToggleLike_Click">
+                                                <MenuItem.Icon>
+                                                    <Path Data="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" 
+                            Fill="White" Stretch="Uniform" Width="14" Height="14"/>
+                                                </MenuItem.Icon>
+                                            </MenuItem>
+
+                                            <MenuItem Header="Add to playlist" x:Name="MenuAddToPlaylist">
+                                                <MenuItem.Icon>
+                                                    <Path Data="M14 10H2v2h12v-2zm0-4H2v2h12V6zm4 8v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM2 16h8v-2H2v2z" 
+                            Fill="White" Stretch="Uniform" Width="14" Height="14"/>
+                                                </MenuItem.Icon>
+                                                <MenuItem Header="Loading..."/>
+                                            </MenuItem>
+                                        </ContextMenu>
+                                    </Button.ContextMenu>
+                                </Button>
+                            </Grid>
+
+                            <DataTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="StatusOverlay" Property="Visibility" Value="Visible"/>
+                                </Trigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+
+                <StackPanel x:Name="YTLoadingIndicator" Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Collapsed">
+                    <TextBlock Text="Searching YouTube..." Foreground="#5CD1FF" FontSize="18" FontWeight="Bold"/>
+                </StackPanel>
+            </Grid>
+
+            <Border x:Name="QueueDrawer" Grid.Column="1"
+Background="#1F2940"
+VerticalAlignment="Bottom" 
+Height="400" 
+Margin="0 0 0 0" 
+CornerRadius="16 16 0 0"
+Visibility="Collapsed">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="20" Color="Black" Opacity="0.5" Direction="90"/>
+                </Border.Effect>
+
+                <Border.RenderTransform>
+                    <TranslateTransform x:Name="QueueDrawerTransform" Y="400"/>
+                </Border.RenderTransform>
+
+                <Grid Margin="20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" Margin="0 0 0 15">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Now Playing" Foreground="#5CD1FF" FontWeight="Bold" FontSize="16" VerticalAlignment="Center"/>
+                            <TextBlock Text=" • Next Up" Foreground="#6F7A95" FontSize="16" VerticalAlignment="Center" Margin="5 0"/>
+                        </StackPanel>
+
+                        <Button HorizontalAlignment="Right" Content="Clear" Foreground="#FF5C5C" 
+            Style="{StaticResource IconButtonStyle}" FontWeight="Bold" FontSize="12"
+            Click="BtnClearQueue_Click"/>
+                    </Grid>
+
+                    <ListView Grid.Row="1" x:Name="QueueList"
+      VirtualizingPanel.ScrollUnit="Pixel"
+      Background="Transparent" BorderThickness="0"
+      ScrollViewer.VerticalScrollBarVisibility="Auto"
+      ItemContainerStyle="{StaticResource MusicListItemStyle}"
+      
+      ItemsSource="{Binding Source={x:Static local:App.Music}, Path=CurrentQueue}"
+      
+      AllowDrop="True"
+      PreviewMouseLeftButtonDown="QueueList_PreviewMouseLeftButtonDown"
+      PreviewMouseMove="QueueList_PreviewMouseMove"
+      Drop="QueueList_Drop"
+      MouseDoubleClick="QueueList_MouseDoubleClick">
 
                         <ListView.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid Margin="0 6">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="30"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="150"/>
-                                            <ColumnDefinition Width="50"/>
-                                        </Grid.ColumnDefinitions>
+                            <DataTemplate>
+                                <Grid Margin="0 6" Background="Transparent" MouseRightButtonUp="SongRow_RightClick">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="30"/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="50"/>
+                                        <ColumnDefinition Width="40"/>
+                                    </Grid.ColumnDefinitions>
 
-                                        <TextBlock Text="≡" Grid.Column="0" Foreground="#586380" 
-                                       VerticalAlignment="Center" HorizontalAlignment="Center" 
-                                       Cursor="SizeNS" FontSize="16"/>
+                                    <TextBlock Text="≡" Grid.Column="0" 
+               Foreground="#586380" 
+               VerticalAlignment="Center" HorizontalAlignment="Center" 
+               Cursor="SizeNS" FontSize="18"/>
 
-                                        <TextBlock Text="{Binding Title}" Grid.Column="1" 
-                                       Foreground="White" FontSize="14" FontWeight="SemiBold" 
-                                       TextTrimming="CharacterEllipsis"/>
+                                    <Border Grid.Column="1" Width="40" Height="40" CornerRadius="4" 
+            Background="#2A3550" HorizontalAlignment="Left"
+            BorderBrush="#3E4C6E" BorderThickness="1">
+                                        <Grid>
+                                            <Grid.Clip>
+                                                <RectangleGeometry Rect="0,0,40,40" RadiusX="4" RadiusY="4"/>
+                                            </Grid.Clip>
 
-                                        <TextBlock Text="{Binding Artist}" Grid.Column="2" 
-                                       Foreground="#AEB7D3" FontSize="13" 
-                                       TextTrimming="CharacterEllipsis"/>
+                                            <Path Data="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"
+                  Fill="#586380" Stretch="Uniform" Width="18" Height="18"
+                  HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.7"/>
 
-                                        <TextBlock Text="{Binding DurationFormatted}" Grid.Column="3" 
-                                       HorizontalAlignment="Right" Foreground="#6F7A95" 
-                                       FontSize="13"/>
-                                    </Grid>
-                                </DataTemplate>
-                            </ListView.ItemTemplate>
-                        </ListView>
-                    </Grid>
-                </Border>
+                                            <Image helpers:AlbumArtLoader.Item="{Binding}" Stretch="UniformToFill"/>
 
-                <Grid Grid.Row="1" Background="#151C30" Height="85" VerticalAlignment="Bottom">
+                                            <Border x:Name="YouTubeBadge" 
+                    Visibility="Collapsed"
+                    Width="14" Height="10" 
+                    Background="Red" CornerRadius="0 0 0 4"
+                    HorizontalAlignment="Right" VerticalAlignment="Top">
+                                                <Path Data="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" 
+                      Fill="White" Stretch="Uniform" Margin="2"/>
+                                            </Border>
+                                            <Grid x:Name="StatusOverlay" Visibility="Collapsed">
+                                                <Border Background="#101010" Opacity="0.6"/>
+                                                <Path x:Name="StatusIcon" 
+                      Data="M8 5v14l11-7z" 
+                      Fill="White" Stretch="Uniform" Width="14" Height="14"
+                      HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <Path.Effect>
+                                                        <DropShadowEffect BlurRadius="4" ShadowDepth="0" Color="Black" Opacity="0.5"/>
+                                                    </Path.Effect>
+                                                </Path>
+                                            </Grid>
+                                        </Grid>
+                                    </Border>
+
+                                    <TextBlock Text="{Binding Title}" Grid.Column="2" 
+               Foreground="White" FontSize="14" FontWeight="SemiBold" 
+               VerticalAlignment="Center" Margin="5 0 10 0"
+               TextTrimming="CharacterEllipsis"/>
+
+                                    <TextBlock Text="{Binding Artist}" Grid.Column="3" 
+               Foreground="#AEB7D3" FontSize="13" 
+               VerticalAlignment="Center"
+               TextTrimming="CharacterEllipsis"/>
+
+                                    <TextBlock Text="{Binding DurationFormatted}" Grid.Column="4" 
+               HorizontalAlignment="Right" VerticalAlignment="Center"
+               Foreground="#6F7A95" FontSize="12" Margin="0 0 10 0"/>
+
+                                    <Button x:Name="BtnMoreOptions" Grid.Column="5"
+            Content="⋮" FontSize="18" FontWeight="Bold"
+            Background="Transparent" BorderThickness="0"
+            Foreground="#6F7A95"
+            HorizontalAlignment="Center" VerticalAlignment="Center"
+            Cursor="Hand" Click="SongMenu_Click">
+                                        <Button.ContextMenu>
+                                            <ContextMenu x:Name="SongContextMenu">
+                                                <ContextMenu.Resources>
+                                                    <Style TargetType="{x:Type MenuItem}">
+                                                        <Setter Property="Foreground" Value="#E0E0E0"/>
+                                                        <Setter Property="FontSize" Value="13"/>
+                                                        <Setter Property="FontWeight" Value="Medium"/>
+                                                        <Setter Property="Cursor" Value="Hand"/>
+                                                        <Setter Property="Template">
+                                                            <Setter.Value>
+                                                                <ControlTemplate TargetType="{x:Type MenuItem}">
+                                                                    <Border x:Name="Border" Padding="12,6" Background="Transparent">
+                                                                        <Grid>
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="20"/>
+                                                                                <ColumnDefinition Width="10"/>
+                                                                                <ColumnDefinition Width="*"/>
+                                                                                <ColumnDefinition Width="Auto"/>
+                                                                            </Grid.ColumnDefinitions>
+                                                                            <ContentPresenter Grid.Column="0" ContentSource="Icon" HorizontalAlignment="Center" VerticalAlignment="Center" Width="16" Height="16"/>
+                                                                            <ContentPresenter Grid.Column="2" ContentSource="Header" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                                                            <Path x:Name="RightArrow" Grid.Column="3" Data="M0,0 L4,3.5 L0,7 Z" Fill="#AEB7D3" Margin="10,0,0,0" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                                                            <Popup x:Name="PART_Popup" AllowsTransparency="True" Focusable="False" 
+                                                   HorizontalOffset="2" VerticalOffset="-4"
+                                                   IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}" 
+                                                   Placement="Right">
+                                                                                <Border Background="#1F2940" BorderThickness="1" BorderBrush="#3E4C6E" CornerRadius="8" Padding="2">
+                                                                                    <ScrollViewer CanContentScroll="True" MaxHeight="300" VerticalScrollBarVisibility="Auto">
+                                                                                        <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle" />
+                                                                                    </ScrollViewer>
+                                                                                </Border>
+                                                                            </Popup>
+                                                                        </Grid>
+                                                                    </Border>
+                                                                    <ControlTemplate.Triggers>
+                                                                        <Trigger Property="IsHighlighted" Value="True">
+                                                                            <Setter TargetName="Border" Property="Background" Value="#3E4C6E"/>
+                                                                            <Setter Property="Foreground" Value="White"/>
+                                                                        </Trigger>
+                                                                        <Trigger Property="Role" Value="SubmenuHeader">
+                                                                            <Setter TargetName="RightArrow" Property="Visibility" Value="Visible"/>
+                                                                        </Trigger>
+                                                                    </ControlTemplate.Triggers>
+                                                                </ControlTemplate>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </Style>
+                                                    <Style TargetType="{x:Type Separator}">
+                                                        <Setter Property="Template">
+                                                            <Setter.Value>
+                                                                <ControlTemplate TargetType="{x:Type Separator}">
+                                                                    <Border Height="1" Background="#3E4C6E" Margin="0,6"/>
+                                                                </ControlTemplate>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </Style>
+                                                    <Style TargetType="{x:Type ContextMenu}">
+                                                        <Setter Property="HasDropShadow" Value="True" />
+                                                        <Setter Property="Template">
+                                                            <Setter.Value>
+                                                                <ControlTemplate TargetType="{x:Type ContextMenu}">
+                                                                    <Border Background="#1F2940" BorderThickness="1" BorderBrush="#3E4C6E" CornerRadius="8" Padding="0,4">
+                                                                        <Border.Effect>
+                                                                            <DropShadowEffect BlurRadius="12" Color="Black" Opacity="0.5" ShadowDepth="4"/>
+                                                                        </Border.Effect>
+                                                                        <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle" />
+                                                                    </Border>
+                                                                </ControlTemplate>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </Style>
+                                                </ContextMenu.Resources>
+
+                                                <MenuItem Header="Add to Queue" Click="Context_AddToQueue_Click">
+                                                    <MenuItem.Icon>
+                                                        <Path Data="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z" Fill="White" Stretch="Uniform" Width="14" Height="14"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+
+                                                <MenuItem Header="Save to Liked Songs" Click="Context_ToggleLike_Click">
+                                                    <MenuItem.Icon>
+                                                        <Path Data="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" Fill="White" Stretch="Uniform" Width="14" Height="14"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+
+                                                <MenuItem Header="Add to playlist" x:Name="MenuAddToPlaylist">
+                                                    <MenuItem.Icon>
+                                                        <Path Data="M14 10H2v2h12v-2zm0-4H2v2h12V6zm4 8v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zM2 16h8v-2H2v2z" Fill="White" Stretch="Uniform" Width="14" Height="14"/>
+                                                    </MenuItem.Icon>
+                                                    <MenuItem Header="Loading..."/>
+                                                </MenuItem>
+                                            </ContextMenu>
+                                        </Button.ContextMenu>
+                                    </Button>
+
+                                </Grid>
+
+                                <DataTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="StatusOverlay" Property="Visibility" Value="Visible"/>
+                                    </Trigger>
+
+                                    <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                        <Setter TargetName="StatusOverlay" Property="Visibility" Value="Visible"/>
+                                        <Setter TargetName="StatusOverlay" Property="Background" Value="#CC5CD1FF"/>
+                                        <Setter TargetName="StatusIcon" Property="Data" Value="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                                    </DataTrigger>
+
+                                    <DataTrigger Binding="{Binding IsYouTube}" Value="True">
+                                        <Setter TargetName="YouTubeBadge" Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Row="1" Background="#151C30" Height="85" VerticalAlignment="Bottom">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
@@ -1559,15 +1978,30 @@ Fill="White" Stretch="Uniform" Width="14" Height="14"/>
                             MouseMove="ProgressSlider_MouseMove"/>
 
                     <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Margin="20 0" VerticalAlignment="Center">
-                        <Ellipse x:Name="AlbumArtContainer" Width="45" Height="45" Fill="#2A3550">
-                            <Ellipse.Effect>
-                                <DropShadowEffect BlurRadius="10" Color="Black" Opacity="0.4" ShadowDepth="2"/>
-                            </Ellipse.Effect>
-                        </Ellipse>
+                    <Border Width="45" Height="45" CornerRadius="6" 
+        Background="#2A3550" Margin="0 0 0 0"
+        BorderBrush="#3E4C6E" BorderThickness="1">
 
-                        <StackPanel Margin="12 0" VerticalAlignment="Center">
-                            <TextBlock Text="Judul Lagu" Foreground="White" FontWeight="SemiBold" FontSize="14" x:Name="CurrentSongTitle" TextTrimming="CharacterEllipsis" MaxWidth="160"/>
-                            <TextBlock Text="Nama Artis" Foreground="#AEB7D3" FontSize="12" Margin="0 2 0 0" x:Name="CurrentSongArtist" TextTrimming="CharacterEllipsis" MaxWidth="160"/>
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="10" Color="Black" Opacity="0.4" ShadowDepth="2"/>
+                        </Border.Effect>
+
+                        <Grid>
+                            <Grid.Clip>
+                                <RectangleGeometry Rect="0,0,45,45" RadiusX="6" RadiusY="6"/>
+                            </Grid.Clip>
+
+                            <Path Data="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"
+              Fill="#586380" Stretch="Uniform" Width="20" Height="20"
+              HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.7"/>
+
+                            <Image x:Name="CurrentAlbumArtImage" Stretch="UniformToFill"/>
+                        </Grid>
+                    </Border>
+
+                    <StackPanel Margin="12 0" VerticalAlignment="Center">
+                            <TextBlock Text="Song Title" Foreground="White" FontWeight="SemiBold" FontSize="14" x:Name="CurrentSongTitle" TextTrimming="CharacterEllipsis" MaxWidth="160"/>
+                            <TextBlock Text="Artist Name" Foreground="#AEB7D3" FontSize="12" Margin="0 2 0 0" x:Name="CurrentSongArtist" TextTrimming="CharacterEllipsis" MaxWidth="160"/>
                         </StackPanel>
                     </StackPanel>
 
@@ -1605,5 +2039,13 @@ Fill="White" Stretch="Uniform" Width="14" Height="14"/>
 
                 </Grid>
             </Grid>
-        </Grid>
+        <Border x:Name="QueueOverlay" 
+Grid.Column="0" Grid.ColumnSpan="2"
+Background="Transparent"
+                Margin="0 0 0 85"
+Visibility="Collapsed"
+MouseLeftButtonDown="QueueOverlay_MouseDown"/>
+
+        
+    </Grid>
     </Window>

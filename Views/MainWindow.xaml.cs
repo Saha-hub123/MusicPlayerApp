@@ -215,49 +215,49 @@ namespace MusicPlayerApp.Views
             }
         }
 
-        private void UpdateAlbumArt(string filePath)
-        {
-            try
-            {
-                // 1. Baca metadata file MP3 menggunakan TagLib
-                var file = TagLib.File.Create(filePath);
+        //private void UpdateAlbumArt(string filePath)
+        //{
+        //    try
+        //    {
+        //        // 1. Baca metadata file MP3 menggunakan TagLib
+        //        var file = TagLib.File.Create(filePath);
 
-                // 2. Cek apakah file memiliki gambar (Picture)
-                if (file.Tag.Pictures.Length > 0)
-                {
-                    // Ambil data gambar pertama
-                    var bin = (byte[])file.Tag.Pictures[0].Data.Data;
+        //        // 2. Cek apakah file memiliki gambar (Picture)
+        //        if (file.Tag.Pictures.Length > 0)
+        //        {
+        //            // Ambil data gambar pertama
+        //            var bin = (byte[])file.Tag.Pictures[0].Data.Data;
 
-                    // Konversi byte array menjadi BitmapImage
-                    BitmapImage albumCover = new BitmapImage();
-                    using (MemoryStream ms = new MemoryStream(bin))
-                    {
-                        albumCover.BeginInit();
-                        albumCover.CacheOption = BitmapCacheOption.OnLoad;
-                        albumCover.StreamSource = ms;
-                        albumCover.EndInit();
-                    }
+        //            // Konversi byte array menjadi BitmapImage
+        //            BitmapImage albumCover = new BitmapImage();
+        //            using (MemoryStream ms = new MemoryStream(bin))
+        //            {
+        //                albumCover.BeginInit();
+        //                albumCover.CacheOption = BitmapCacheOption.OnLoad;
+        //                albumCover.StreamSource = ms;
+        //                albumCover.EndInit();
+        //            }
 
-                    // 3. Masukkan gambar ke Ellipse (AlbumArtContainer)
-                    var brush = new ImageBrush();
-                    brush.ImageSource = albumCover;
-                    brush.Stretch = Stretch.UniformToFill; // Agar gambar pas di lingkaran
+        //            // 3. Masukkan gambar ke Ellipse (AlbumArtContainer)
+        //            var brush = new ImageBrush();
+        //            brush.ImageSource = albumCover;
+        //            brush.Stretch = Stretch.UniformToFill; // Agar gambar pas di lingkaran
 
-                    AlbumArtContainer.Fill = brush;
-                }
-                else
-                {
-                    // Jika tidak ada gambar, kembalikan ke warna default
-                    // Pastikan kode warna sama dengan XAML awal kamu
-                    AlbumArtContainer.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2A3550"));
-                }
-            }
-            catch (Exception)
-            {
-                // Jika terjadi error (misal file rusak), set ke default
-                AlbumArtContainer.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2A3550"));
-            }
-        }
+        //            AlbumArtContainer.Fill = brush;
+        //        }
+        //        else
+        //        {
+        //            // Jika tidak ada gambar, kembalikan ke warna default
+        //            // Pastikan kode warna sama dengan XAML awal kamu
+        //            AlbumArtContainer.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2A3550"));
+        //        }
+        //    }
+        //    catch (Exception)
+        //    {
+        //        // Jika terjadi error (misal file rusak), set ke default
+        //        AlbumArtContainer.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2A3550"));
+        //    }
+        //}
 
         private void PlayPause_Click(object sender, RoutedEventArgs e)
         {
@@ -314,27 +314,37 @@ namespace MusicPlayerApp.Views
 
         private void UpdateProgress(object sender, EventArgs e)
         {
-            if (_isDragging)
-                return;
-
-            if (_currentSong == null)
-                return;
+            // 1. Validasi dasar
+            if (_isDragging) return;
+            if (_currentSong == null) return;
 
             int handle = App.Player.StreamHandle;
-            if (handle == 0)
-                return;
+            if (handle == 0) return;
 
+            // 2. Cek Status Audio (Playing/Stopped/Stalled)
             var state = Bass.ChannelIsActive(handle);
 
-            // Jika stream sedang berhenti atau buffer habis → jangan update
-            if (state == PlaybackState.Stopped || state == PlaybackState.Stalled)
-                return;
+            // --- LOGIKA AUTO NEXT (BARU) ---
+            if (state == PlaybackState.Stopped)
+            {
+                // Karena _timer hanya berjalan saat status "Playing" (bukan Pause),
+                // Maka jika BASS melapor status "Stopped" di sini, 
+                // artinya lagu benar-benar habis durasinya (EOF).
 
+                App.Music.PlayNext();
+                return;
+            }
+
+            // Jika sedang Buffering (Stalled), jangan update slider dulu
+            if (state == PlaybackState.Stalled)
+                return;
+            // --------------------------------
+
+            // 3. Update Slider & Teks Waktu (Kode Lama)
             long posBytes = Bass.ChannelGetPosition(handle);
             long lenBytes = Bass.ChannelGetLength(handle);
 
-            if (lenBytes <= 0)
-                return;
+            if (lenBytes <= 0) return;
 
             double posSec = Bass.ChannelBytes2Seconds(handle, posBytes);
             double lenSec = Bass.ChannelBytes2Seconds(handle, lenBytes);
@@ -381,21 +391,62 @@ namespace MusicPlayerApp.Views
 
         private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            string query = SearchBox.Text.ToLower();
+            // 1. Pindah View ke Main agar tidak menimpa tampilan lain
+            ShowView("main");
 
+            // 2. Atur UI Lokal (Munculkan List Lagu)
+            NewPlayedList.Visibility = Visibility.Visible;
+            CardGridView.Visibility = Visibility.Collapsed;
+            DetailView.Visibility = Visibility.Collapsed;
+            BtnBack.Visibility = Visibility.Collapsed;
+            ResetSidebarButtons();
+
+            string query = SearchBox.Text;
+
+            // Ambil referensi tombol Search YouTube
+            var btnSearch = FindName("BtnSearchOnline") as Button;
+
+            // --- LOGIKA UTAMA PERBAIKAN ---
             if (string.IsNullOrWhiteSpace(query))
             {
+                // A. Jika Kosong: Reset Judul & List
+                PageTitle.Text = "All Songs";
                 NewPlayedList.ItemsSource = _allSongs;
-                return;
+
+                // B. SEMBUNYIKAN & BERSIHKAN TOMBOL YOUTUBE
+                if (btnSearch != null)
+                {
+                    btnSearch.Visibility = Visibility.Collapsed;
+                    // PENTING: Reset teksnya agar sisa huruf "a" atau "b" dari ketikan sebelumnya hilang
+                    btnSearch.Content = "Search on YouTube";
+                }
             }
+            else
+            {
+                // A. Jika Ada Teks: Filter Lagu
+                PageTitle.Text = "Search Results";
 
-            var filtered = _allSongs
-              .Where(s =>
-                s.Title.ToLower().Contains(query) ||
-                s.Artist.ToLower().Contains(query))
-              .ToList();
+                // Filter case-insensitive
+                var lowerQuery = query.ToLower();
+                var filtered = _allSongs.Where(s =>
+                    (s.Title != null && s.Title.ToLower().Contains(lowerQuery)) ||
+                    (s.Artist != null && s.Artist.ToLower().Contains(lowerQuery))
+                ).ToList();
 
-            NewPlayedList.ItemsSource = filtered;
+                NewPlayedList.ItemsSource = filtered;
+
+                // B. MUNCULKAN & UPDATE TOMBOL YOUTUBE
+                if (btnSearch != null)
+                {
+                    btnSearch.Visibility = Visibility.Visible;
+
+                    // Format teks tombol (potong jika terlalu panjang agar rapi)
+                    string displayQuery = query.Length > 15 ? query.Substring(0, 12) + "..." : query;
+
+                    // Update teks tombol
+                    btnSearch.Content = $"Search YouTube for \"{displayQuery}\"";
+                }
+            }
         }
 
         private void UpdatePlayState(bool isPlaying)
@@ -427,12 +478,17 @@ namespace MusicPlayerApp.Views
 
         private void UpdateSongDisplay(Song song)
         {
+            if (song == null) return;
+
             // 1. Update Teks Judul & Artis
             CurrentSongTitle.Text = song.Title;
             CurrentSongArtist.Text = song.Artist;
 
-            // 2. Update Gambar Album
-            UpdateAlbumArt(song.FilePath);
+            // --- PERBAIKAN COVER ALBUM (YOUTUBE & LOKAL) ---
+            // Gunakan Loader canggih kita untuk mengisi Image di footer
+            // Ini otomatis mendeteksi apakah itu Link YouTube atau File Lokal
+            MusicPlayerApp.Helpers.AlbumArtLoader.SetItem(CurrentAlbumArtImage, song);
+            // -----------------------------------------------
 
             // 3. Update Status Tombol Play
             UpdatePlayState(true);
@@ -442,93 +498,88 @@ namespace MusicPlayerApp.Views
             ProgressSlider.Value = 0;
             CurrentTimeText.Text = "0:00";
 
-            // 5. Update Highlight di List Utama (NewPlayedList)
+            // 5. Scroll List ke lagu yang aktif
             NewPlayedList.SelectedItem = song;
             NewPlayedList.ScrollIntoView(song);
 
-            // --- TAMBAHAN BARU: Update Highlight di Queue List ---
-            // Kita cari lagu yang sama di dalam CurrentQueue berdasarkan ID atau FilePath
-            // Ini penting karena object 'song' mungkin berbeda referensi memory-nya
+            // Sync Queue List juga
             var queueItem = App.Music.CurrentQueue.FirstOrDefault(s => s.FilePath == song.FilePath);
-
             if (queueItem != null)
             {
-                QueueList.SelectedItem = queueItem;       // Sorot lagu di Queue
-                QueueList.ScrollIntoView(queueItem);      // Scroll agar terlihat
+                QueueList.SelectedItem = queueItem;
+                QueueList.ScrollIntoView(queueItem);
             }
-            // ----------------------------------------------------
         }
 
         private void Filter_Click(object sender, RoutedEventArgs e)
         {
-            _isPlaylistView = false;
-            _currentPlaylistId = -1;
-
-            // 1. Reset Konteks Folder & Load Data Utama
-            App.CurrentMusicFolder = null;
-            LoadSongs(); // Ini mengisi variabel _allSongs di memori
-
-            // 2. Reset Layout Tampilan
-            PlaylistDetailView.Visibility = Visibility.Collapsed;
-            PlaylistIndexView.Visibility = Visibility.Collapsed;
-            MainContentView.Visibility = Visibility.Visible;
-
             Button clickedButton = sender as Button;
             if (clickedButton == null) return;
 
             string filterType = clickedButton.Tag?.ToString();
             if (string.IsNullOrEmpty(filterType)) return;
 
-            // 3. Reset Tampilan Tombol Sidebar
+            // 1. Reset Visual Tombol Sidebar
             ResetSidebarButtons();
-            // Tambahan: Pastikan tombol Liked juga di-reset warnanya
-            BtnLiked.Foreground = (Brush)new BrushConverter().ConvertFrom("#6F7A95");
-            BtnLiked.FontWeight = FontWeights.Normal;
-
-            // 4. Highlight tombol yang diklik
             clickedButton.Foreground = Brushes.White;
             clickedButton.FontWeight = FontWeights.Bold;
 
-            // 5. Reset Visibility Panel
+            // 2. CEK APAKAH INI TOMBOL YOUTUBE?
+            if (filterType == "YouTube")
+            {
+                // Pindah ke View YouTube
+                ShowView("youtube");
+
+                // Update Judul Halaman (Opsional, karena di YouTubeView sudah ada judul sendiri)
+                PageTitle.Text = "YouTube";
+
+                // BERSIHKAN DATA (Agar tidak muncul lagu lokal atau hasil lama)
+                YTSearchResults.ItemsSource = null;
+
+                // Opsional: Bersihkan text box jika ingin reset total
+                // YTSearchBox.Text = ""; 
+
+                return; // BERHENTI DI SINI (Jangan jalankan logika sorting lokal di bawah)
+            }
+
+            // 3. JIKA BUKAN YOUTUBE (Berarti Songs, Albums, Artist, Liked)
+            // Pindah ke View Utama
+            ShowView("main");
+
+            // Reset State View Lokal
+            _isPlaylistView = false;
+            _currentPlaylistId = -1;
+            App.CurrentMusicFolder = null;
+            LoadSongs(); // Reload _allSongs ke memori
+
+            // Reset Layout Lokal
             NewPlayedList.Visibility = Visibility.Collapsed;
             CardGridView.Visibility = Visibility.Collapsed;
             DetailView.Visibility = Visibility.Collapsed;
             BtnBack.Visibility = Visibility.Collapsed;
 
+            // --- LOGIKA FILTER LOKAL (Kode Lama Anda) ---
             switch (filterType)
             {
                 case "Songs":
                     _currentViewMode = "Songs";
                     PageTitle.Text = "All Songs";
                     NewPlayedList.Visibility = Visibility.Visible;
-
-                    // --- PERBAIKAN PENTING DI SINI ---
-                    // Kembalikan sumber data list ke _allSongs
                     NewPlayedList.ItemsSource = _allSongs;
-                    // ---------------------------------
                     break;
 
                 case "Discover":
                     _currentViewMode = "Songs";
                     PageTitle.Text = "Discover";
                     NewPlayedList.Visibility = Visibility.Visible;
-
-                    // --- PERBAIKAN PENTING DI SINI ---
-                    // Kembalikan sumber data list ke _allSongs SEBELUM melakukan sorting
                     NewPlayedList.ItemsSource = _allSongs;
-                    // ---------------------------------
 
-                    // Sorting Logic
                     ICollectionView view = CollectionViewSource.GetDefaultView(NewPlayedList.ItemsSource);
                     if (view != null)
                     {
                         view.SortDescriptions.Clear();
                         view.GroupDescriptions.Clear();
-
-                        if (filterType == "Discover")
-                            view.SortDescriptions.Add(new SortDescription("DateAdded", ListSortDirection.Descending));
-                        else
-                            view.GroupDescriptions.Add(new PropertyGroupDescription("FirstLetter"));
+                        view.SortDescriptions.Add(new SortDescription("DateAdded", ListSortDirection.Descending));
                     }
                     break;
 
@@ -550,11 +601,7 @@ namespace MusicPlayerApp.Views
                     _currentViewMode = "Liked";
                     PageTitle.Text = "Liked Songs";
                     NewPlayedList.Visibility = Visibility.Visible;
-
-                    // Ambil data Liked Songs
                     var likedSongs = App.Db.GetLikedSongs();
-
-                    // Di sini kita MEMUTUS hubungan dari _allSongs dan ganti ke likedSongs
                     NewPlayedList.ItemsSource = likedSongs;
                     break;
             }
@@ -566,23 +613,25 @@ namespace MusicPlayerApp.Views
         {
             var defaultColor = (Brush)new BrushConverter().ConvertFrom("#6F7A95");
 
-            // Menu Utama
-            BtnDiscover.Foreground = defaultColor;
-            BtnDiscover.FontWeight = FontWeights.Normal;
+            BtnDiscover.Foreground = defaultColor; BtnDiscover.FontWeight = FontWeights.Normal;
+            BtnSongs.Foreground = defaultColor; BtnSongs.FontWeight = FontWeights.Normal;
+            BtnAlbums.Foreground = defaultColor; BtnAlbums.FontWeight = FontWeights.Normal;
+            BtnArtists.Foreground = defaultColor; BtnArtists.FontWeight = FontWeights.Normal;
+            BtnLiked.Foreground = defaultColor; BtnLiked.FontWeight = FontWeights.Normal;
 
-            BtnSongs.Foreground = defaultColor;
-            BtnSongs.FontWeight = FontWeights.Normal;
+            // TAMBAHKAN INI
+            if (FindName("BtnYouTube") is Button btnYT)
+            {
+                btnYT.Foreground = defaultColor;
+                btnYT.FontWeight = FontWeights.Normal;
+            }
 
-            BtnAlbums.Foreground = defaultColor;
-            BtnAlbums.FontWeight = FontWeights.Normal;
-
-            BtnArtists.Foreground = defaultColor;
-            BtnArtists.FontWeight = FontWeights.Normal;
-
-            // Catatan: Tombol "Default Library" dan "Add Folder" di XAML Anda 
-            // belum memiliki x:Name. Jika Anda ingin mereset warnanya juga secara manual, 
-            // Anda perlu memberi x:Name di MainWindow.xaml, misal: x:Name="BtnDefaultLib".
-            // Jika tidak, logika di atas sudah cukup untuk Menu Navigasi.
+            // Reset tombol library lainnya...
+            if (_activeLibraryButton != null)
+            {
+                _activeLibraryButton.Foreground = defaultColor;
+                _activeLibraryButton.FontWeight = FontWeights.Normal;
+            }
         }
 
         private void NewPlayedList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -592,25 +641,31 @@ namespace MusicPlayerApp.Views
 
         private void ShowView(string view)
         {
-            // Pastikan MainContentView (Grid utama musik) juga di-collapse
-            // Asumsi nama grid utama Anda adalah MainContentView
-            if (FindName("MainContentView") is Grid mainGrid)
-                mainGrid.Visibility = Visibility.Collapsed;
-
+            // 1. SEMBUNYIKAN SEMUA GRID TERLEBIH DAHULU (Reset)
+            if (FindName("MainContentView") is Grid mGrid) mGrid.Visibility = Visibility.Collapsed;
             PlaylistIndexView.Visibility = Visibility.Collapsed;
             PlaylistDetailView.Visibility = Visibility.Collapsed;
 
+            // PENTING: Sembunyikan YouTube View juga
+            if (FindName("YouTubeView") is Grid yGrid) yGrid.Visibility = Visibility.Collapsed;
+
+            // 2. TAMPILKAN HANYA YANG DIMINTA
             switch (view)
             {
-                case "main":
-                    if (FindName("MainContentView") is Grid mGrid)
-                        mGrid.Visibility = Visibility.Visible;
+                case "main": // Tampilan Lagu Lokal
+                    if (FindName("MainContentView") is Grid mg) mg.Visibility = Visibility.Visible;
                     break;
-                case "playlist-index":
+
+                case "playlist-index": // Tampilan Daftar Playlist
                     PlaylistIndexView.Visibility = Visibility.Visible;
                     break;
-                case "playlist-detail":
+
+                case "playlist-detail": // Tampilan Isi Playlist
                     PlaylistDetailView.Visibility = Visibility.Visible;
+                    break;
+
+                case "youtube": // Tampilan YouTube
+                    if (FindName("YouTubeView") is Grid yg) yg.Visibility = Visibility.Visible;
                     break;
             }
         }
@@ -919,6 +974,9 @@ namespace MusicPlayerApp.Views
             // Gunakan Helper tadi
             SetActiveButton(sender as Button);
 
+            // 1. Panggil ShowView ke MAIN (Penting!)
+            ShowView("main");
+
             // Highlight tombol
             if (sender is Button btn)
             {
@@ -971,6 +1029,9 @@ namespace MusicPlayerApp.Views
         // Update fungsi DynamicFolder_Click
         private void DynamicFolder_Click(object sender, RoutedEventArgs e)
         {
+            // 1. Panggil ShowView ke MAIN (Penting!)
+            ShowView("main");
+
             if (sender is Button btn && btn.Tag is string path)
             {
                 // Gunakan Helper tadi untuk visual indicator
@@ -989,6 +1050,9 @@ namespace MusicPlayerApp.Views
             ResetSidebarButtons();
             ResetViewToSongList(); // <--- TAMBAHAN PENTING
             ShowMainContent();
+
+            // 1. Panggil ShowView ke MAIN (Penting!)
+            ShowView("main");
 
             App.CurrentMusicFolder = path;
 
@@ -1341,6 +1405,8 @@ namespace MusicPlayerApp.Views
         {
             if (BtnOpenQueue.IsChecked == true)
             {
+                // 1. Munculkan Overlay (Agar bisa mendeteksi klik luar)
+                QueueOverlay.Visibility = Visibility.Visible;
                 // Jalankan Animasi BUKA
                 var sb = (System.Windows.Media.Animation.Storyboard)FindResource("OpenQueueAnimation");
                 sb.Begin();
@@ -1354,6 +1420,8 @@ namespace MusicPlayerApp.Views
             }
             else
             {
+                // 1. Sembunyikan Overlay
+                QueueOverlay.Visibility = Visibility.Collapsed;
                 // Jalankan Animasi TUTUP
                 var sb = (System.Windows.Media.Animation.Storyboard)FindResource("CloseQueueAnimation");
                 sb.Begin();
@@ -1640,7 +1708,8 @@ namespace MusicPlayerApp.Views
                 };
 
                 // Agar teksnya rata kiri (tidak menjorok)
-                item.Style = (Style)parentItem.FindResource("PlainMenuItemStyle");
+                // Gunakan TryFindResource agar aplikasi TIDAK CRASH jika style tidak ketemu
+                item.Style = Application.Current.MainWindow.TryFindResource("PlainMenuItemStyle") as Style;
 
                 item.Click += Context_AddToSpecificPlaylist_Click;
                 parentItem.Items.Add(item);
@@ -1833,6 +1902,128 @@ namespace MusicPlayerApp.Views
                     return result;
             }
             return null;
+        }
+
+        // 2. Saat Tombol Search Online diklik
+        private void BtnSearchOnline_Click(object sender, RoutedEventArgs e)
+        {
+            string query = SearchBox.Text;
+            if (string.IsNullOrWhiteSpace(query)) return;
+
+            // 1. Pindah ke View YouTube
+            ShowView("youtube");
+
+            // 2. Reset Sidebar Button (agar tidak ada yang aktif)
+            ResetSidebarButtons();
+
+            // 3. Tempel Query ke Search Bar YouTube
+            YTSearchBox.Text = query;
+            YTSearchBox.Focus();
+
+            // 4. Eksekusi Pencarian
+            PerformYouTubeSearch(query);
+
+            // 5. Sembunyikan tombol trigger di sidebar (opsional, karena view sudah pindah)
+            BtnSearchOnline.Visibility = Visibility.Collapsed;
+            SearchBox.Text = ""; // Clear sidebar search agar bersih
+        }
+
+        // Event saat area di luar drawer diklik
+        private void QueueOverlay_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            // Cukup panggil logika tombol Close
+            if (BtnOpenQueue.IsChecked == true)
+            {
+                BtnOpenQueue.IsChecked = false; // Matikan toggle button
+                BtnOpenQueue_Click(BtnOpenQueue, null); // Panggil fungsi tutup
+            }
+        }
+
+        // Event Handler: Add To Queue
+        private void Context_AddToQueue_Click(object sender, RoutedEventArgs e)
+        {
+            var menuItem = sender as MenuItem;
+            var song = menuItem?.DataContext as Song;
+
+            // Fallback: Jika DataContext null (kadang terjadi pada submenu), cari dari parent
+            if (song == null)
+            {
+                var contextMenu = FindParent<ContextMenu>(menuItem);
+                song = contextMenu?.DataContext as Song;
+            }
+
+            if (song != null)
+            {
+                // Masukkan ke Antrian (Paling Bawah)
+                App.Music.CurrentQueue.Add(song);
+
+                // Feedback Visual (Opsional)
+                // MessageBox.Show($"Added '{song.Title}' to queue."); 
+
+                // Animasi kecil di Queue List (agar user sadar ada yang nambah)
+                if (QueueList.Items.Count > 0)
+                {
+                    QueueList.ScrollIntoView(QueueList.Items[QueueList.Items.Count - 1]);
+                }
+            }
+        }
+
+        private async void PerformYouTubeSearch(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query)) return;
+
+            // 1. Tampilkan Loading (Ganti nama variabel jadi 'loaderOn')
+            if (FindName("YTLoadingIndicator") is StackPanel loaderOn)
+            {
+                loaderOn.Visibility = Visibility.Visible;
+            }
+
+            YTSearchResults.ItemsSource = null; // Bersihkan hasil lama
+
+            try
+            {
+                // 2. Panggil Service (Pastikan limit 50 sudah diset di service)
+                var results = await App.YouTube.SearchVideoAsync(query);
+                YTSearchResults.ItemsSource = results;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Gagal mencari: " + ex.Message);
+            }
+            finally
+            {
+                // 3. Sembunyikan Loading (Ganti nama variabel jadi 'loaderOff')
+                if (FindName("YTLoadingIndicator") is StackPanel loaderOff)
+                {
+                    loaderOff.Visibility = Visibility.Collapsed;
+                }
+            }
+        }
+
+        // Saat user menekan Enter di Search Bar YouTube
+        private void YTSearchBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                PerformYouTubeSearch(YTSearchBox.Text);
+            }
+        }
+
+        // Saat user menekan tombol panah kecil
+        private void BtnInternalYTSearch_Click(object sender, RoutedEventArgs e)
+        {
+            PerformYouTubeSearch(YTSearchBox.Text);
+        }
+
+        // Saat hasil search di-double click (Play)
+        private void YTSearchResults_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (YTSearchResults.SelectedItem is Song song)
+            {
+                // Konversi item source ke List<Song> agar PlayQueue bekerja
+                var list = YTSearchResults.Items.Cast<Song>().ToList();
+                App.Music.PlayQueue(list, song);
+            }
         }
     }
 }

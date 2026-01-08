@@ -41,6 +41,10 @@ namespace MusicPlayerApp.Models
         // [Ignore] artinya tidak perlu disimpan ke Database SQLite (hanya untuk runtime)
         private bool _isPlaying;
 
+        // Helper Property untuk XAML Trigger
+        // Cek apakah FilePath diawali dengan "YT:"
+        public bool IsYouTube => !string.IsNullOrEmpty(FilePath) && FilePath.StartsWith("YT:");
+
         [Ignore]
         public bool IsPlaying
         {
