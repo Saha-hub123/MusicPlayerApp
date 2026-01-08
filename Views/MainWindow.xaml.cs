@@ -30,10 +30,15 @@ namespace MusicPlayerApp.Views
     public class CardItem
     {
         public int Id { get; set; }
-        public string Title { get; set; }     // Nama Album / Nama Artis
-        public string Subtitle { get; set; }  // Nama Artis / Jumlah Lagu
-        public string CoverPath { get; set; } // Path Gambar
-        public string Type { get; set; }      // "Album" atau "Artist"
+        public string Title { get; set; }
+        public string Subtitle { get; set; }
+
+        // Kita gunakan field ini untuk menyimpan:
+        // 1. URL (Jika Online)
+        // 2. Path File Lagu MP3 pertama (Jika Lokal) -> Loader akan ekstrak cover darinya
+        public string CoverPath { get; set; }
+
+        public string Type { get; set; }
     }
 
     public partial class MainWindow : Window
@@ -1046,7 +1051,6 @@ namespace MusicPlayerApp.Views
         // UPDATE: Load Albums
         private void LoadAlbumsToGrid()
         {
-            // Menggunakan Thread Background agar UI tidak macet saat ekstrak gambar
             Task.Run(() =>
             {
                 var artists = App.Db.GetAllArtists().ToDictionary(a => a.Id, a => a.Name);
@@ -1055,15 +1059,18 @@ namespace MusicPlayerApp.Views
 
                 foreach (var album in albums)
                 {
-                    string finalCover = album.CoverPath;
+                    // Default: Path Cover dari Database (biasanya kosong untuk lokal)
+                    string sourceForCover = album.CoverPath;
 
-                    // Jika DB kosong atau file tidak valid, Extract dari lagu
-                    if (string.IsNullOrEmpty(finalCover) || !File.Exists(finalCover))
+                    // Jika kosong, AMBIL PATH LAGU PERTAMA di album tersebut
+                    // Jangan ekstrak gambar sekarang, cukup ambil path MP3-nya
+                    if (string.IsNullOrEmpty(sourceForCover) || !File.Exists(sourceForCover))
                     {
                         var firstSong = App.Db.GetSongsByAlbumId(album.Id).FirstOrDefault();
-
-                        // Gunakan nama unik: "Album_NamaAlbum"
-                        finalCover = GetOrExtractCover(firstSong, $"Alb_{album.Id}_{album.Title}");
+                        if (firstSong != null)
+                        {
+                            sourceForCover = firstSong.FilePath; // Simpan path MP3
+                        }
                     }
 
                     cardList.Add(new CardItem
@@ -1071,12 +1078,11 @@ namespace MusicPlayerApp.Views
                         Id = album.Id,
                         Title = album.Title,
                         Subtitle = artists.ContainsKey(album.ArtistId) ? artists[album.ArtistId] : "Unknown Artist",
-                        CoverPath = finalCover,
+                        CoverPath = sourceForCover, // Ini bisa berisi URL atau Path MP3
                         Type = "Album"
                     });
                 }
 
-                // Update UI dari Thread Background
                 Dispatcher.Invoke(() =>
                 {
                     CardGridView.ItemsSource = cardList;
@@ -1094,15 +1100,16 @@ namespace MusicPlayerApp.Views
 
                 foreach (var artist in artists)
                 {
-                    string finalCover = artist.ImagePath;
+                    string sourceForCover = artist.ImagePath;
 
-                    // Jika belum ada foto artis, ambil dari LAGU pertamanya
-                    if (string.IsNullOrEmpty(finalCover) || !File.Exists(finalCover))
+                    // Jika belum ada foto artis, ambil path LAGU PERTAMANYA
+                    if (string.IsNullOrEmpty(sourceForCover) || !File.Exists(sourceForCover))
                     {
                         var firstSong = App.Db.GetSongsByArtistId(artist.Id).FirstOrDefault();
-
-                        // Gunakan nama unik: "Art_NamaArtis"
-                        finalCover = GetOrExtractCover(firstSong, $"Art_{artist.Id}_{artist.Name}");
+                        if (firstSong != null)
+                        {
+                            sourceForCover = firstSong.FilePath;
+                        }
                     }
 
                     cardList.Add(new CardItem
@@ -1110,7 +1117,7 @@ namespace MusicPlayerApp.Views
                         Id = artist.Id,
                         Title = artist.Name,
                         Subtitle = "Artist",
-                        CoverPath = finalCover,
+                        CoverPath = sourceForCover, // Path MP3 untuk diekstrak covernya
                         Type = "Artist"
                     });
                 }

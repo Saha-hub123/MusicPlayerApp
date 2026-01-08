@@ -715,41 +715,42 @@
                         <DataTemplate>
                             <Grid Margin="0 4" Background="Transparent" MouseRightButtonUp="SongRow_RightClick">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="65"/>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="100"/>
                                     <ColumnDefinition Width="40"/>
                                 </Grid.ColumnDefinitions>
 
-                                <Border Grid.Column="0" Width="45" Height="45" CornerRadius="6" Background="#2A3550" Margin="0 0 15 0">
+                                <Border Grid.Column="0" Width="48" Height="48" CornerRadius="8" 
+        Background="#2A3550" Margin="0 0 15 0"
+        BorderBrush="#3E4C6E" BorderThickness="1">
+
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.4" Color="Black"/>
+                                    </Border.Effect>
+
                                     <Grid>
+                                        <Grid.Clip>
+                                            <RectangleGeometry Rect="0,0,48,48" RadiusX="8" RadiusY="8"/>
+                                        </Grid.Clip>
+
                                         <Path Data="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"
-                          Fill="#3E4C6E" Stretch="Uniform" Width="20" Height="20"
-                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+              Fill="#586380" Stretch="Uniform" Width="22" Height="22"
+              HorizontalAlignment="Center" VerticalAlignment="Center"
+              Opacity="0.7"/>
 
-                                        <Image helpers:AlbumArtLoader.Song="{Binding}" Stretch="UniformToFill">
-                                            <Image.Clip>
-                                                <RectangleGeometry Rect="0,0,45,45" RadiusX="6" RadiusY="6"/>
-                                            </Image.Clip>
-                                            <Image.Style>
-                                                <Style TargetType="Image">
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding CoverPath}" Value="{x:Null}">
-                                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding CoverPath}" Value="">
-                                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Image.Style>
-                                        </Image>
+                                        <Image helpers:AlbumArtLoader.Item="{Binding}" Stretch="UniformToFill"/>
 
-                                        <Grid x:Name="StatusOverlay" Background="#99000000" Visibility="Collapsed">
+                                        <Grid x:Name="StatusOverlay" Visibility="Collapsed">
+                                            <Border Background="#101010" Opacity="0.6"/>
                                             <Path x:Name="StatusIcon" 
-                              Data="M8 5v14l11-7z" 
-                              Fill="White" Stretch="Uniform" Width="14" Height="14"
-                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                  Data="M8 5v14l11-7z" 
+                  Fill="White" Stretch="Uniform" Width="16" Height="16"
+                  HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <Path.Effect>
+                                                    <DropShadowEffect BlurRadius="4" ShadowDepth="0" Color="Black" Opacity="0.5"/>
+                                                </Path.Effect>
+                                            </Path>
                                         </Grid>
                                     </Grid>
                                 </Border>
@@ -948,41 +949,42 @@
                         <DataTemplate>
                             <Grid Margin="0 4" Background="Transparent" MouseRightButtonUp="SongRow_RightClick">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="60"/>
+                                    <ColumnDefinition Width="65"/>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="100"/>
                                     <ColumnDefinition Width="40"/>
                                 </Grid.ColumnDefinitions>
 
-                                <Border Grid.Column="0" Width="45" Height="45" CornerRadius="6" Background="#2A3550" Margin="0 0 15 0">
+                                <Border Grid.Column="0" Width="48" Height="48" CornerRadius="8" 
+        Background="#2A3550" Margin="0 0 15 0"
+        BorderBrush="#3E4C6E" BorderThickness="1">
+
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.4" Color="Black"/>
+                                    </Border.Effect>
+
                                     <Grid>
+                                        <Grid.Clip>
+                                            <RectangleGeometry Rect="0,0,48,48" RadiusX="8" RadiusY="8"/>
+                                        </Grid.Clip>
+
                                         <Path Data="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"
-                          Fill="#3E4C6E" Stretch="Uniform" Width="20" Height="20"
-                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+              Fill="#586380" Stretch="Uniform" Width="22" Height="22"
+              HorizontalAlignment="Center" VerticalAlignment="Center"
+              Opacity="0.7"/>
 
-                                        <Image Source="{Binding CoverPath}" Stretch="UniformToFill">
-                                            <Image.Clip>
-                                                <RectangleGeometry Rect="0,0,45,45" RadiusX="6" RadiusY="6"/>
-                                            </Image.Clip>
-                                            <Image.Style>
-                                                <Style TargetType="Image">
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding CoverPath}" Value="{x:Null}">
-                                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding CoverPath}" Value="">
-                                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Image.Style>
-                                        </Image>
+                                        <Image helpers:AlbumArtLoader.Item="{Binding}" Stretch="UniformToFill"/>
 
-                                        <Grid x:Name="StatusOverlay" Background="#99000000" Visibility="Collapsed">
+                                        <Grid x:Name="StatusOverlay" Visibility="Collapsed">
+                                            <Border Background="#101010" Opacity="0.6"/>
                                             <Path x:Name="StatusIcon" 
-                              Data="M8 5v14l11-7z" 
-                              Fill="White" Stretch="Uniform" Width="14" Height="14"
-                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                  Data="M8 5v14l11-7z" 
+                  Fill="White" Stretch="Uniform" Width="16" Height="16"
+                  HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <Path.Effect>
+                                                    <DropShadowEffect BlurRadius="4" ShadowDepth="0" Color="Black" Opacity="0.5"/>
+                                                </Path.Effect>
+                                            </Path>
                                         </Grid>
                                     </Grid>
                                 </Border>
@@ -1202,7 +1204,7 @@ Fill="White" Stretch="Uniform" Width="14" Height="14"/>
                                   Width="60" Height="60"
                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-                                            <Image Source="{Binding CoverPath}" 
+                                        <Image helpers:AlbumArtLoader.Item="{Binding}"
                                    Stretch="UniformToFill"/>
                                         </Grid>
                                     </Border>
@@ -1254,41 +1256,42 @@ Fill="White" Stretch="Uniform" Width="14" Height="14"/>
                             <DataTemplate>
                                 <Grid Margin="0 4" Background="Transparent" MouseRightButtonUp="SongRow_RightClick">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="60"/>
+                                        <ColumnDefinition Width="65"/>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="100"/>
                                         <ColumnDefinition Width="40"/>
                                     </Grid.ColumnDefinitions>
 
-                                    <Border Grid.Column="0" Width="45" Height="45" CornerRadius="6" Background="#2A3550" Margin="0 0 15 0">
+                                    <Border Grid.Column="0" Width="48" Height="48" CornerRadius="8" 
+        Background="#2A3550" Margin="0 0 15 0"
+        BorderBrush="#3E4C6E" BorderThickness="1">
+
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.4" Color="Black"/>
+                                        </Border.Effect>
+
                                         <Grid>
+                                            <Grid.Clip>
+                                                <RectangleGeometry Rect="0,0,48,48" RadiusX="8" RadiusY="8"/>
+                                            </Grid.Clip>
+
                                             <Path Data="M12 3v9.28c-.47-.17-.97-.28-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"
-                          Fill="#3E4C6E" Stretch="Uniform" Width="20" Height="20"
-                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+              Fill="#586380" Stretch="Uniform" Width="22" Height="22"
+              HorizontalAlignment="Center" VerticalAlignment="Center"
+              Opacity="0.7"/>
 
-                                            <Image Source="{Binding CoverPath}" Stretch="UniformToFill">
-                                                <Image.Clip>
-                                                    <RectangleGeometry Rect="0,0,45,45" RadiusX="6" RadiusY="6"/>
-                                                </Image.Clip>
-                                                <Image.Style>
-                                                    <Style TargetType="Image">
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding CoverPath}" Value="{x:Null}">
-                                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding CoverPath}" Value="">
-                                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Image.Style>
-                                            </Image>
+                                            <Image helpers:AlbumArtLoader.Item="{Binding}" Stretch="UniformToFill"/>
 
-                                            <Grid x:Name="StatusOverlay" Background="#99000000" Visibility="Collapsed">
+                                            <Grid x:Name="StatusOverlay" Visibility="Collapsed">
+                                                <Border Background="#101010" Opacity="0.6"/>
                                                 <Path x:Name="StatusIcon" 
-                              Data="M8 5v14l11-7z" 
-                              Fill="White" Stretch="Uniform" Width="14" Height="14"
-                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                  Data="M8 5v14l11-7z" 
+                  Fill="White" Stretch="Uniform" Width="16" Height="16"
+                  HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <Path.Effect>
+                                                        <DropShadowEffect BlurRadius="4" ShadowDepth="0" Color="Black" Opacity="0.5"/>
+                                                    </Path.Effect>
+                                                </Path>
                                             </Grid>
                                         </Grid>
                                     </Border>
