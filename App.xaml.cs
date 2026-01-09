@@ -18,6 +18,7 @@ namespace MusicPlayerApp
         public static string CurrentMusicFolder { get; set; }
         public static FileSystemWatcher Watcher { get; private set; }
         public static MainWindow MainUI { get; private set; }
+        public static YouTubeService YouTube { get; private set; }
 
         protected override void OnStartup(StartupEventArgs e)
         {
@@ -75,10 +76,11 @@ namespace MusicPlayerApp
             main.Show();
 
             // Jangan panggil ReloadSongList() sebelum UI siap
-            main.Loaded += (s, ev) =>
-            {
-                main.ReloadSongList();
-            };
+            //main.Loaded += (s, ev) =>
+            //{
+            //    main.ReloadSongList();
+            //};
+            YouTube = new YouTubeService(); // Init
         }
 
 

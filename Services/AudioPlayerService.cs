@@ -5,26 +5,41 @@ namespace MusicPlayerApp.Services
     public class AudioPlayerService
     {
         private int _stream;
+        private float _volume = 1.0f;   // Menyimpan level volume (1.0 = 100%)
         public int StreamHandle => _stream;
 
         public AudioPlayerService()
         {
-            Bass.Init();
+            // 1. Init BASS
+            ManagedBass.Bass.Init(-1, 44100, ManagedBass.DeviceInitFlags.Default, IntPtr.Zero);
+
+            // 2. LOAD PLUGIN AAC (Wajib agar YouTube bunyi)
+            int pluginAac = ManagedBass.Bass.PluginLoad("bass_aac.dll");
+            if (pluginAac == 0) System.Diagnostics.Debug.WriteLine("Gagal load bass_aac.dll");
         }
 
         public void Play(string filePath)
         {
-            Stop(); // hentikan stream lama
+            Stop(); // Stop lagu sebelumnya
 
-            _stream = Bass.CreateStream(filePath);
-
-            if (_stream == 0)
+            // 3. DETEKSI URL ONLINE
+            if (filePath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
             {
-                // Jika gagal load
-                return;
+                // Stream dari Internet
+                _stream = ManagedBass.Bass.CreateStream(filePath, 0, ManagedBass.BassFlags.AutoFree, null, IntPtr.Zero);
+            }
+            else
+            {
+                // File Lokal
+                if (!System.IO.File.Exists(filePath)) return;
+                _stream = ManagedBass.Bass.CreateStream(filePath, 0, 0, ManagedBass.BassFlags.AutoFree);
             }
 
-            Bass.ChannelPlay(_stream);
+            if (_stream != 0)
+            {
+                ManagedBass.Bass.ChannelPlay(_stream);
+                ManagedBass.Bass.ChannelSetAttribute(_stream, ManagedBass.ChannelAttribute.Volume, _volume);
+            }
         }
 
         public void Pause()

@@ -39,6 +39,9 @@ namespace MusicPlayerApp.Controllers
         // Debounce dictionary (hindari event berulang)
         private static Dictionary<string, DateTime> _eventTracker = new();
         private static readonly object _lock = new();
+        // --- 1. TAMBAHKAN VARIABEL INI (PENTING) ---
+        // Ini untuk menyimpan posisi lagu sekarang (0, 1, 2, dst)
+        private int _currentIndex = -1;
 
         public MusicController(DatabaseService db, AudioPlayerService player)
         {
@@ -286,13 +289,26 @@ namespace MusicPlayerApp.Controllers
             // D. Tentukan Index Mulai
             if (startingSong != null)
             {
-                var foundSong = CurrentQueue.FirstOrDefault(s => s.Id == startingSong.Id);
-                if (foundSong != null) _queueIndex = CurrentQueue.IndexOf(foundSong);
-                else _queueIndex = 0;
+                // --- PERBAIKAN DI SINI ---
+                // JANGAN cari berdasarkan Reference (songs.IndexOf(startSong)) karena object bisa beda referensi
+                // JANGAN cari berdasarkan ID jika ID-nya 0.
+                // CARI berdasarkan FilePath (Unik).
+
+                var targetSong = CurrentQueue.FirstOrDefault(s => s.FilePath == startingSong.FilePath);
+
+                if (targetSong != null)
+                {
+                    PlaySong(targetSong); // PlaySong akan otomatis set _currentIndex
+                }
+                else
+                {
+                    // Fallback jika tidak ketemu
+                    PlaySong(CurrentQueue[0]);
+                }
             }
-            else
+            else if (CurrentQueue.Count > 0)
             {
-                _queueIndex = 0;
+                PlaySong(CurrentQueue[0]);
             }
 
             // E. Mainkan
@@ -311,10 +327,22 @@ namespace MusicPlayerApp.Controllers
         {
             if (CurrentQueue.Count == 0) return;
 
-            _queueIndex++;
-            if (_queueIndex >= CurrentQueue.Count) _queueIndex = 0; // Loop ke awal
+            // Tambah index
+            _currentIndex++;
 
-            PlayCurrentIndex();
+            // Jika sudah di akhir antrian
+            if (_currentIndex >= CurrentQueue.Count)
+            {
+                // Jika Repeat All aktif -> Balik ke 0
+                // Jika tidak -> Stop atau tetap di akhir
+                _currentIndex = 0; // Contoh logic repeat
+            }
+
+            // Ambil lagu di posisi baru
+            var nextSong = CurrentQueue[_currentIndex];
+
+            // Mainkan
+            PlaySong(nextSong);
         }
 
         // 3. Fungsi Previous (Diupdate variabelnya)
@@ -322,10 +350,19 @@ namespace MusicPlayerApp.Controllers
         {
             if (CurrentQueue.Count == 0) return;
 
-            _queueIndex--;
-            if (_queueIndex < 0) _queueIndex = CurrentQueue.Count - 1; // Loop ke belakang
+            // Geser index ke belakang
+            _currentIndex--;
 
-            PlayCurrentIndex();
+            // Jika kurang dari 0 (sebelum lagu pertama)
+            if (_currentIndex < 0)
+            {
+                // Loncat ke lagu paling terakhir (Looping)
+                _currentIndex = CurrentQueue.Count - 1;
+            }
+
+            // Ambil lagu di urutan baru & Mainkan
+            var prevSong = CurrentQueue[_currentIndex];
+            PlaySong(prevSong);
         }
 
         // Helper: PlayCurrentIndex (Diupdate variabelnya)
@@ -437,20 +474,61 @@ namespace MusicPlayerApp.Controllers
         }
 
         // Update PlaySong agar memicu Event UI
-        public void PlaySong(Song song)
+        // Ubah PlaySong jadi async void
+        public async void PlaySong(Song song)
         {
             try
             {
-                _player.Stop(); // Stop lagu sebelumnya
-                _player.Play(song.FilePath);
+                // --- 1. PERBAIKAN LOGIKA NEXT (Sinkronisasi Index) ---
+                // Kita cari tahu lagu yang diklik ini ada di urutan ke berapa di antrian saat ini
+
+                // Kita cari berdasarkan FilePath (karena ID mungkin 0 untuk lagu YouTube)
+                var indexInQueue = -1;
+                for (int i = 0; i < CurrentQueue.Count; i++)
+                {
+                    if (CurrentQueue[i].FilePath == song.FilePath)
+                    {
+                        indexInQueue = i;
+                        break;
+                    }
+                }
+
+                // Jika ketemu di antrian, update penunjuk posisi (_currentIndex)
+                if (indexInQueue != -1)
+                {
+                    _currentIndex = indexInQueue;
+                }
+                // -----------------------------------------------------
+
+
+                // Logika YouTube / Lokal (Kode lama kamu)
+                string urlToPlay = song.FilePath;
+
+                if (song.FilePath.StartsWith("YT:"))
+                {
+                    string videoId = song.FilePath.Substring(3);
+                    var streamUrl = await App.YouTube.GetAudioStreamUrlAsync(videoId);
+
+                    if (!string.IsNullOrEmpty(streamUrl))
+                    {
+                        urlToPlay = streamUrl;
+                    }
+                    else
+                    {
+                        return;
+                    }
+                }
+
+                // Play Audio
+                _player.Play(urlToPlay);
                 IsPlaying = true;
 
-                // BERITAHU UI BAHWA LAGU BERGANTI
+                // Beritahu UI
                 CurrentSongChanged?.Invoke(song);
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("Error playing song: " + ex.Message);
+                System.Diagnostics.Debug.WriteLine("Error playing song: " + ex.Message);
             }
         }
 
